@@ -1,4 +1,10 @@
-body {
+.name-heading {
+    font-size: 3rem;
+    margin-bottom: 30px;
+    font-weight: bold;
+    color: #ffd700;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}body {
     margin: 0;
     padding: 0;
     background-color: #121212;
