@@ -1,9 +1,22 @@
 .name-heading {
-    font-size: 3rem;
+    font-size: 3.5rem;
     margin-bottom: 30px;
     font-weight: bold;
-    color: #ffd700;
-    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    background: linear-gradient(90deg, #00ff77, #ff00e6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 0 15px rgba(0, 255, 119, 0.7), 0 0 15px rgba(255, 0, 230, 0.7);
+    animation: neon 2s ease-in-out infinite alternate;
+}
+
+@keyframes neon {
+    from {
+        text-shadow: 0 0 10px rgba(0, 255, 119, 0.7), 0 0 20px rgba(0, 255, 119, 0.7);
+    }
+    to {
+        text-shadow: 0 0 20px rgba(255, 0, 230, 0.7), 0 0 30px rgba(255, 0, 230, 0.7);
+    }
 }body {
     margin: 0;
     padding: 0;
@@ -31,16 +44,8 @@
 #rotatingImage {
     width: 200px;
     height: 200px;
-    animation: spin 5s linear infinite;
-}
-
-@keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-    100% {
-        transform: rotate(360deg);
-    }
+    will-change: transform;
+    /* Usuwamy animację CSS, ponieważ teraz sterujemy tym przez JavaScript */
 }
 
 .social-icons {
