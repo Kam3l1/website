@@ -25,7 +25,16 @@ body {
 #rotatingImage {
     width: 200px;
     height: 200px;
-    transition: transform 0.05s linear;
+    animation: spin 10s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .social-icons {
