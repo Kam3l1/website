@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PC Specs</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #121212;
+            font-family: Arial, sans-serif;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .specs-container {
+            background-color: #1e1e1e;
+            border-radius: 10px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #ffd700;
+            font-size: 32px;
+        }
+        
+        .specs-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        
+        .specs-list li {
+            padding: 12px 0;
+            font-size: 18px;
+            border-bottom: 1px solid #333;
+        }
+        
+        .specs-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .specs-list li i {
+            margin-right: 15px;
+            color: #ffd700;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .back-button {
+            display: block;
+            text-align: center;
+            margin-top: 30px;
+            color: #ffd700;
+            text-decoration: none;
+            font-size: 18px;
+            transition: transform 0.3s;
+        }
+        
+        .back-button:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="specs-container">
+        <h1>PC Specs</h1>
+        <ul class="specs-list">
+            <li><i class="fas fa-microchip"></i>Ryzen 5 5600</li>
+            <li><i class="fas fa-desktop"></i>RTX 3060 Gaming OC 12GB</li>
+            <li><i class="fas fa-server"></i>Gigabyte Aorus B550 Elite V2</li>
+            <li><i class="fas fa-memory"></i>Crucial 32GB 3200mhz</li>
+            <li><i class="fas fa-hdd"></i>Samsung S990 PRO 1TB</li>
+            <li><i class="fas fa-hdd"></i>Samsung S980 PRO 500GB</li>
+            <li><i class="fas fa-hdd"></i>PNY CS1030 500GB</li>
+            <li><i class="fas fa-hdd"></i>PNY CS900 120GB SSD</li>
+        </ul>
+        <a href="index.html" class="back-button">
+            <i class="fas fa-arrow-left"></i> Back to Home
+        </a>
+    </div>
+</body>
+</html>

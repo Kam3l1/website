@@ -1,0 +1,47 @@
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #121212;
+    font-family: Arial, sans-serif;
+    color: white;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.rotating-image {
+    margin-bottom: 40px;
+}
+
+#rotatingImage {
+    width: 200px;
+    height: 200px;
+    transition: transform 0.05s linear;
+}
+
+.social-icons {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.icon-link {
+    color: white;
+    font-size: 32px;
+    text-decoration: none;
+    transition: transform 0.3s, color 0.3s;
+}
+
+.icon-link:hover {
+    transform: scale(1.2);
+    color: #ffd700;
+}
