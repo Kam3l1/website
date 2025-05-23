@@ -13,22 +13,27 @@
             font-family: Arial, sans-serif;
             color: white;
             min-height: 100vh;
+            position: relative;
         }
+
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 30px;
         }
+
         .back-btn {
             color: white;
             font-size: 24px;
             text-decoration: none;
             transition: color 0.3s;
         }
+
         .back-btn:hover {
             color: #00ff77;
         }
+
         .title {
             font-size: 2.5rem;
             font-weight: bold;
@@ -39,41 +44,186 @@
             text-align: center;
             flex-grow: 1;
         }
+
         .spreadsheet-container {
             background: #1a1a1a;
             border-radius: 10px;
+            padding: 0;
             box-shadow: 0 0 20px rgba(0, 255, 119, 0.1);
+            overflow: hidden;
             border: 2px solid #333;
-            overflow-x: auto;
         }
+
         .spreadsheet {
             width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: #2a2a2a;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 11px;
         }
-        .row-header, .col-header, .cell {
+
+        .row-header {
+            background: #3a3a3a;
+            border: 1px solid #555;
+            text-align: center;
+            font-weight: bold;
+            width: 40px;
+            min-width: 40px;
+            padding: 4px;
+            color: #ccc;
+            user-select: none;
+        }
+
+        .col-header {
+            background: #3a3a3a;
+            border: 1px solid #555;
+            text-align: center;
+            font-weight: bold;
+            padding: 4px 8px;
+            color: #ccc;
+            user-select: none;
+            min-width: 80px;
+        }
+
+        .cell {
             border: 1px solid #555;
             padding: 4px 8px;
-        }
-        .row-header, .col-header {
-            background: #333;
-            font-weight: bold;
-            text-align: center;
-        }
-        .cell {
             background: #2a2a2a;
             color: white;
             min-width: 80px;
+            height: 20px;
+            position: relative;
+            cursor: cell;
         }
+
+        .cell:hover {
+            background: #3a3a3a;
+        }
+
+        .cell.selected {
+            background: #4285f4 !important;
+            border: 2px solid #66a3ff !important;
+            color: white !important;
+        }
+
+        .cell.editing {
+            padding: 0;
+        }
+
+        .cell.merged {
+            background: #3a4a3a !important;
+            border: 2px solid #00ff77 !important;
+        }
+
+        .cell.hidden {
+            display: none;
+        }
+
+        .cell-input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            padding: 4px 8px;
+            font-family: inherit;
+            font-size: inherit;
+            background: #2a2a2a;
+            color: white;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        .admin-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: #333;
+            border: 1px solid #555;
+            color: #888;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            opacity: 0.3;
+            transition: opacity 0.3s;
+            z-index: 1000;
+        }
+
+        .admin-btn:hover {
+            opacity: 0.8;
+        }
+
+        .admin-panel {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #2a2a2a;
+            border: 2px solid #444;
+            border-radius: 8px;
+            padding: 20px;
+            z-index: 1001;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+            min-width: 400px;
+        }
+
+        .admin-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+        }
+
+        .password-input {
+            padding: 10px;
+            background: #333;
+            border: 1px solid #555;
+            color: white;
+            border-radius: 4px;
+            margin-right: 10px;
+            width: 200px;
+        }
+
+        .confirm-btn {
+            background: linear-gradient(45deg, #00ff77, #ff00e6);
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .close-btn {
+            background: #ff4757;
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            float: right;
+            margin-left: 10px;
+        }
+
         .toolbar {
             display: none;
-            margin-bottom: 10px;
+            background: #3a3a3a;
+            padding: 8px;
+            border-bottom: 1px solid #555;
+            gap: 10px;
             flex-wrap: wrap;
-            gap: 8px;
         }
+
         .toolbar.visible {
             display: flex;
         }
+
         .tool-btn {
             background: #2a2a2a;
             border: 1px solid #555;
@@ -83,76 +233,164 @@
             font-size: 12px;
             color: white;
         }
+
         .tool-btn:hover {
-            background: #444;
+            background: #4a4a4a;
         }
-        .admin-toggle {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background: #1a1a1a;
-            border: none;
-            color: #888;
-            padding: 10px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 18px;
-            opacity: 0.3;
-            transition: opacity 0.3s;
-            z-index: 1000;
-        }
-        .admin-toggle:hover {
-            opacity: 0.8;
-        }
-        .admin-panel {
-            display: none;
-            position: fixed;
-            bottom: 60px;
-            left: 20px;
-            background: #2a2a2a;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-            z-index: 1001;
-        }
-        .admin-panel input[type="password"] {
-            padding: 6px;
-            width: 160px;
-            margin-right: 8px;
-            border: 1px solid #555;
-            background: #1a1a1a;
+
+        .tool-btn.active {
+            background: #4285f4;
             color: white;
-            border-radius: 4px;
         }
-        .admin-panel button {
-            padding: 6px 10px;
-            border: none;
-            border-radius: 4px;
+
+        .tool-btn.merge {
             background: #00ff77;
             color: #000;
+        }
+
+        .tool-btn.unmerge {
+            background: #ff4757;
+            color: white;
+        }
+
+        .tool-btn.copy {
+            background: #ff9500;
+            color: white;
+        }
+
+        .color-picker {
+            width: 30px;
+            height: 25px;
+            border: 1px solid #ccc;
             cursor: pointer;
+            border-radius: 3px;
+        }
+
+        .font-size-input {
+            width: 50px;
+            background: #2a2a2a;
+            border: 1px solid #555;
+            color: white;
+            padding: 4px;
+            border-radius: 3px;
+            text-align: center;
+        }
+
+        .range-selector {
+            position: absolute;
+            border: 2px dashed #4285f4;
+            background: rgba(66, 133, 244, 0.1);
+            pointer-events: none;
+            display: none;
+        }
+
+        .status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #333;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #ccc;
+            z-index: 1000;
+        }
+
+        .status.success {
+            background: #00ff77;
+            color: #000;
+        }
+
+        .status.error {
+            background: #ff4757;
+            color: white;
+        }
+
+        .copy-textarea {
+            width: 100%;
+            min-height: 200px;
+            background: #333;
+            border: 1px solid #555;
+            color: white;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            border-radius: 4px;
+            margin: 10px 0;
+            resize: vertical;
+        }
+
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2rem;
+            }
+            
+            .spreadsheet {
+                font-size: 10px;
+            }
+            
+            .cell, .col-header {
+                min-width: 60px;
+            }
         }
     </style>
 </head>
 <body>
+    <div class="admin-overlay" id="adminOverlay"></div>
+    
+    <div class="admin-panel" id="adminPanel">
+        <button class="close-btn" onclick="closeAdminPanel()">×</button>
+        <h3 style="color: white; margin-top: 0;">Tryb Administratora</h3>
+        <div>
+            <input type="password" class="password-input" id="passwordInput" placeholder="Wpisz hasło...">
+            <button class="confirm-btn" onclick="checkPassword()">Potwierdź</button>
+        </div>
+        
+        <div id="copySection" style="display: none; margin-top: 20px; border-top: 1px solid #555; padding-top: 20px;">
+            <h4 style="color: white; margin: 0 0 10px 0;">Skopiuj HTML tabeli</h4>
+            <p style="color: #ccc; font-size: 12px; margin-bottom: 10px;">Skopiuj poniższy kod HTML i wklej go do swojego pliku:</p>
+            <textarea class="copy-textarea" id="htmlOutput" readonly></textarea>
+            <button class="confirm-btn" onclick="copyToClipboard()" style="width: 100%;">📋 Skopiuj do schowka</button>
+        </div>
+    </div>
+
     <div class="header">
-        <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
-        <h1 class="title"><i class="fas fa-crosshairs"></i> Austin Major 2025 Pickems</h1>
+        <a href="index.html" class="back-btn">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h1 class="title">
+            <i class="fas fa-crosshairs"></i> Austin Major 2025 Pickems
+        </h1>
         <div></div>
     </div>
 
-    <div class="toolbar" id="toolbar">
-        <button class="tool-btn" onclick="copyTableHTML()">📋 Kopiuj HTML</button>
-        <button class="tool-btn" onclick="addRow()">➕ Dodaj wiersz</button>
-        <button class="tool-btn" onclick="addColumn()">➕ Dodaj kolumnę</button>
-        <button class="tool-btn" onclick="deleteRow()">➖ Usuń wiersz</button>
-        <button class="tool-btn" onclick="deleteColumn()">➖ Usuń kolumnę</button>
-        <input type="color" class="tool-btn" onchange="changeTextColor(this.value)" title="Kolor tekstu">
-        <input type="color" class="tool-btn" onchange="changeBackgroundColor(this.value)" title="Kolor tła">
-        <input type="number" min="8" max="32" value="12" class="tool-btn" onchange="changeFontSize(this.value)" title="Czcionka">
-    </div>
-
     <div class="spreadsheet-container">
+        <div class="toolbar" id="toolbar">
+            <button class="tool-btn" onclick="formatBold()"><b>B</b></button>
+            <button class="tool-btn" onclick="formatItalic()"><i>I</i></button>
+            <button class="tool-btn" onclick="formatUnderline()"><u>U</u></button>
+            <span style="margin: 0 10px; color: #666;">|</span>
+            <button class="tool-btn" onclick="alignLeft()">⬅️</button>
+            <button class="tool-btn" onclick="alignCenter()">↔️</button>
+            <button class="tool-btn" onclick="alignRight()">➡️</button>
+            <span style="margin: 0 10px; color: #666;">|</span>
+            <input type="number" class="font-size-input" id="fontSizeInput" value="11" min="8" max="24" title="Rozmiar czcionki">
+            <button class="tool-btn" onclick="changeFontSize()">A</button>
+            <span style="margin: 0 10px; color: #666;">|</span>
+            <input type="color" class="color-picker" id="bgColorPicker" value="#2a2a2a" onchange="changeBgColor()" title="Kolor tła kafelka">
+            <input type="color" class="color-picker" id="textColorPicker" value="#ffffff" onchange="changeTextColor()" title="Kolor tekstu">
+            <span style="margin: 0 10px; color: #666;">|</span>
+            <button class="tool-btn merge" onclick="mergeCells()">🔗 Połącz</button>
+            <button class="tool-btn unmerge" onclick="unmergeCells()">🔓 Rozłącz</button>
+            <span style="margin: 0 10px; color: #666;">|</span>
+            <button class="tool-btn" onclick="addRow()">+ Wiersz</button>
+            <button class="tool-btn" onclick="addColumn()">+ Kolumna</button>
+            <button class="tool-btn" onclick="deleteRow()">- Wiersz</button>
+            <button class="tool-btn" onclick="deleteColumn()">- Kolumna</button>
+            <span style="margin: 0 10px; color: #666;">|</span>
+            <button class="tool-btn copy" onclick="generateHTML()">📋 Kopiuj HTML</button>
+        </div>
+        
         <table class="spreadsheet" id="spreadsheet">
             <thead>
                 <tr>
@@ -168,120 +406,550 @@
                 </tr>
             </thead>
             <tbody id="spreadsheetBody">
-                <tr><td class="row-header">1</td><td class="cell">TEST</td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td></tr>
             </tbody>
         </table>
+        
+        <div class="range-selector" id="rangeSelector"></div>
     </div>
 
-    <button class="admin-toggle" onclick="toggleAdminPanel()"><i class="fas fa-cog"></i></button>
-
-    <div class="admin-panel" id="adminPanel">
-        <input type="password" id="adminPassword" placeholder="Hasło">
-        <button onclick="checkAdminPassword()">Zaloguj</button>
-    </div>
+    <button class="admin-btn" onclick="showAdminPanel()">⚙</button>
+    <div class="status" id="status">Gotowy</div>
 
     <script>
-        const ADMIN_PASSWORD_HASH = "ce303098f3cd33f4489a00276812742e876087a8525fafaaa4a2e386ddc7dcf5"; // <- Wklej swoje SHA256 hasło
-
-        function toggleAdminPanel() {
-            const panel = document.getElementById('adminPanel');
-            panel.style.display = (panel.style.display === 'block') ? 'none' : 'block';
+        let isAdminMode = false;
+        let selectedCell = null;
+        let selectedCells = [];
+        let isSelecting = false;
+        let startCell = null;
+        let mergedCells = new Map();
+        
+        const ADMIN_PASSWORD_HASH = "ce303098f3cd33f4489a00276812742e876087a8525fafaaa4a2e386ddc7dcf5";
+        
+        function showStatus(message, type = 'normal') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status';
+            if (type === 'success') status.classList.add('success');
+            if (type === 'error') status.classList.add('error');
+            
+            setTimeout(() => {
+                status.textContent = 'Gotowy';
+                status.className = 'status';
+            }, 3000);
         }
-
-        async function checkAdminPassword() {
-            const input = document.getElementById('adminPassword').value;
+        
+        function initSpreadsheet() {
+            const tbody = document.getElementById('spreadsheetBody');
+            
+            const sampleData = [
+                ['Streamers', '3:0', '3:2', '3:2', '0:3', '', '', ''],
+                ['', '', '', '', '', '', '', ''],
+                ['test', '', '', '', '', '', '', ''],
+                ['', '', '', '', '', '', '', ''],
+                ['', '', '', '', '', '', '', ''],
+            ];
+            
+            for (let i = 0; i < 20; i++) {
+                const row = document.createElement('tr');
+                
+                const rowHeader = document.createElement('td');
+                rowHeader.className = 'row-header';
+                rowHeader.textContent = i + 1;
+                row.appendChild(rowHeader);
+                
+                for (let j = 0; j < 8; j++) {
+                    const cell = document.createElement('td');
+                    cell.className = 'cell';
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    
+                    if (i < sampleData.length && j < sampleData[i].length) {
+                        cell.textContent = sampleData[i][j];
+                    }
+                    
+                    cell.addEventListener('click', selectCell);
+                    cell.addEventListener('dblclick', editCell);
+                    cell.addEventListener('mousedown', startSelection);
+                    cell.addEventListener('mouseover', continueSelection);
+                    
+                    row.appendChild(cell);
+                }
+                
+                tbody.appendChild(row);
+            }
+        }
+        
+        function showAdminPanel() {
+            document.getElementById('adminOverlay').style.display = 'block';
+            document.getElementById('adminPanel').style.display = 'block';
+        }
+        
+        function closeAdminPanel() {
+            document.getElementById('adminOverlay').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'none';
+            document.getElementById('passwordInput').value = '';
+            document.getElementById('copySection').style.display = 'none';
+        }
+        
+        async function checkPassword() {
+            const password = document.getElementById('passwordInput').value;
+            
             const encoder = new TextEncoder();
-            const data = encoder.encode(input);
+            const data = encoder.encode(password);
             const hashBuffer = await crypto.subtle.digest('SHA-256', data);
             const hashArray = Array.from(new Uint8Array(hashBuffer));
             const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
+            
             if (hashHex === ADMIN_PASSWORD_HASH) {
+                isAdminMode = true;
                 document.getElementById('toolbar').classList.add('visible');
-                document.getElementById('adminPanel').style.display = 'none';
-                alert("Tryb administratora aktywowany! Możesz edytować tabelę i skopiować jej kod.");
-                makeTableEditable();
+                document.getElementById('copySection').style.display = 'block';
+                generateHTML();
+                showStatus('Tryb administratora aktywowany!', 'success');
             } else {
-                alert("Nieprawidłowe hasło");
+                showStatus('Nieprawidłowe hasło!', 'error');
             }
         }
-
-        function makeTableEditable() {
-            document.querySelectorAll('.cell').forEach(cell => {
-                cell.ondblclick = () => {
-                    const current = cell.textContent;
-                    const input = document.createElement('input');
-                    input.type = 'text';
-                    input.value = current;
-                    input.className = 'cell';
-                    input.onblur = () => cell.textContent = input.value;
-                    input.onkeydown = e => e.key === 'Enter' && input.blur();
-                    cell.textContent = '';
-                    cell.appendChild(input);
-                    input.focus();
+        
+        function generateHTML() {
+            if (!isAdminMode) return;
+            
+            const spreadsheet = document.getElementById('spreadsheet');
+            const clonedTable = spreadsheet.cloneNode(true);
+            
+            // Usuń wszystkie event listenery i dataset z klonowanej tabeli
+            const cells = clonedTable.querySelectorAll('.cell');
+            cells.forEach(cell => {
+                // Usuń dataset
+                delete cell.dataset.row;
+                delete cell.dataset.col;
+                
+                // Usuń klasy związane z interakcją
+                cell.classList.remove('selected');
+                
+                // Jeśli komórka jest ukryta, usuń ją całkowicie
+                if (cell.classList.contains('hidden')) {
+                    cell.remove();
+                }
+            });
+            
+            // Wygeneruj HTML
+            const htmlOutput = `<table class="spreadsheet">
+    ${clonedTable.innerHTML}
+</table>`;
+            
+            document.getElementById('htmlOutput').value = htmlOutput;
+        }
+        
+        function copyToClipboard() {
+            const textarea = document.getElementById('htmlOutput');
+            textarea.select();
+            textarea.setSelectionRange(0, 99999);
+            
+            try {
+                document.execCommand('copy');
+                showStatus('HTML skopiowany do schowka!', 'success');
+            } catch (err) {
+                showStatus('Błąd podczas kopiowania', 'error');
+            }
+        }
+        
+        function selectCell(e) {
+            if (selectedCell) {
+                selectedCell.classList.remove('selected');
+            }
+            selectedCell = e.target;
+            selectedCell.classList.add('selected');
+            
+            selectedCells.forEach(cell => cell.classList.remove('selected'));
+            selectedCells = [selectedCell];
+        }
+        
+        function editCell(e) {
+            if (!isAdminMode) return;
+            
+            const cell = e.target;
+            const currentText = cell.textContent;
+            
+            cell.classList.add('editing');
+            cell.innerHTML = `<input type="text" class="cell-input" value="${currentText}">`;
+            
+            const input = cell.querySelector('.cell-input');
+            input.focus();
+            input.select();
+            
+            input.addEventListener('blur', () => finishEdit(cell, input));
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    finishEdit(cell, input);
+                } else if (e.key === 'Escape') {
+                    cell.textContent = currentText;
+                    cell.classList.remove('editing');
                 }
             });
         }
-
-        function copyTableHTML() {
-            const tbody = document.getElementById('spreadsheetBody');
-            navigator.clipboard.writeText(tbody.outerHTML).then(() => alert("Skopiowano HTML tabeli"));
+        
+        function finishEdit(cell, input) {
+            cell.textContent = input.value;
+            cell.classList.remove('editing');
+            if (isAdminMode) {
+                generateHTML();
+            }
+        }
+        
+        function startSelection(e) {
+            if (!isAdminMode) return;
+            isSelecting = true;
+            startCell = e.target;
+        }
+        
+        function continueSelection(e) {
+            if (!isSelecting || !isAdminMode) return;
+            
+            const endCell = e.target;
+            const startRow = parseInt(startCell.dataset.row);
+            const startCol = parseInt(startCell.dataset.col);
+            const endRow = parseInt(endCell.dataset.row);
+            const endCol = parseInt(endCell.dataset.col);
+            
+            selectedCells.forEach(cell => cell.classList.remove('selected'));
+            selectedCells = [];
+            
+            const minRow = Math.min(startRow, endRow);
+            const maxRow = Math.max(startRow, endRow);
+            const minCol = Math.min(startCol, endCol);
+            const maxCol = Math.max(startCol, endCol);
+            
+            for (let r = minRow; r <= maxRow; r++) {
+                for (let c = minCol; c <= maxCol; c++) {
+                    const cell = document.querySelector(`[data-row="${r}"][data-col="${c}"]`);
+                    if (cell && !cell.classList.contains('hidden')) {
+                        cell.classList.add('selected');
+                        selectedCells.push(cell);
+                    }
+                }
+            }
+        }
+        
+        document.addEventListener('mouseup', () => {
+            isSelecting = false;
+        });
+        
+        function formatBold() {
+            if (!isAdminMode || selectedCells.length === 0) return;
+            selectedCells.forEach(cell => {
+                cell.style.fontWeight = cell.style.fontWeight === 'bold' ? 'normal' : 'bold';
+            });
+            generateHTML();
+        }
+        
+        function formatItalic() {
+            if (!isAdminMode || selectedCells.length === 0) return;
+            selectedCells.forEach(cell => {
+                cell.style.fontStyle = cell.style.fontStyle === 'italic' ? 'normal' : 'italic';
+            });
+            generateHTML();
+        }
+        
+        function formatUnderline() {
+            if (!isAdminMode || selectedCells.length === 0) return;
+            selectedCells.forEach(cell => {
+                cell.style.textDecoration = cell.style.textDecoration === 'underline' ? 'none' : 'underline';
+            });
+            generateHTML();
         }
 
+        function alignLeft() {
+            if (!isAdminMode || selectedCells.length === 0) return;
+            selectedCells.forEach(cell => {
+                cell.style.textAlign = 'left';
+            });
+            generateHTML();
+        }
+
+        function alignCenter() {
+            if (!isAdminMode || selectedCells.length === 0) return;
+            selectedCells.forEach(cell => {
+                cell.style.textAlign = 'center';
+            });
+            generateHTML();
+        }
+
+        function alignRight() {
+            if (!isAdminMode || selectedCells.length === 0) return;
+            selectedCells.forEach(cell => {
+                cell.style.textAlign = 'right';
+            });
+            generateHTML();
+        }
+        
+        function changeFontSize() {
+            if (!isAdminMode || selectedCells.length === 0) return;
+            const fontSize = document.getElementById('fontSizeInput').value;
+            selectedCells.forEach(cell => {
+                cell.style.fontSize = fontSize + 'px';
+            });
+            generateHTML();
+        }
+        
+        function changeBgColor() {
+            if (!isAdminMode || selectedCells.length === 0) return;
+            const color = document.getElementById('bgColorPicker').value;
+            selectedCells.forEach(cell => {
+                cell.style.backgroundColor = color;
+            });
+            generateHTML();
+        }
+        
+        function changeTextColor() {
+            if (!isAdminMode || selectedCells.length === 0) return;
+            const color = document.getElementById('textColorPicker').value;
+            selectedCells.forEach(cell => {
+                cell.style.color = color;
+            });
+            generateHTML();
+        }
+        
+        function mergeCells() {
+            if (!isAdminMode || selectedCells.length < 2) {
+                alert('Zaznacz co najmniej 2 komórki do połączenia!');
+                return;
+            }
+            
+            // Znajdź komórkę główną (górna lewa)
+            const rows = selectedCells.map(cell => parseInt(cell.dataset.row));
+            const cols = selectedCells.map(cell => parseInt(cell.dataset.col));
+            const minRow = Math.min(...rows);
+            const minCol = Math.min(...cols);
+            const maxRow = Math.max(...rows);
+            const maxCol = Math.max(...cols);
+            
+            const mainCell = selectedCells.find(cell => 
+                parseInt(cell.dataset.row) === minRow && 
+                parseInt(cell.dataset.col) === minCol
+            );
+            
+            if (!mainCell) return;
+            
+            // Oblicz wymiary połączonej komórki
+            const rowSpan = maxRow - minRow + 1;
+            const colSpan = maxCol - minCol + 1;
+            
+            // Ustaw colspan i rowspan
+            mainCell.setAttribute('colspan', colSpan);
+            mainCell.setAttribute('rowspan', rowSpan);
+            mainCell.classList.add('merged');
+            
+            // Zbierz tekst ze wszystkich komórek
+            const allText = selectedCells.map(cell => cell.textContent).filter(text => text.trim()).join(' ');
+            mainCell.textContent = allText;
+            
+            // Ukryj pozostałe komórki
+            selectedCells.forEach(cell => {
+                if (cell !== mainCell) {
+                    cell.classList.add('hidden');
+                }
+            });
+            
+            // Zapisz informacje o połączeniu
+            const mergeKey = `${minRow}-${minCol}`;
+            mergedCells.set(mergeKey, {
+                rowSpan: rowSpan,
+                colSpan: colSpan,
+                hiddenCells: selectedCells.filter(cell => cell !== mainCell).map(cell => ({
+                    row: parseInt(cell.dataset.row),
+                    col: parseInt(cell.dataset.col)
+                }))
+            });
+            
+            generateHTML();
+        }
+        
+        function unmergeCells() {
+            if (!isAdminMode || selectedCells.length === 0) return;
+            
+            selectedCells.forEach(cell => {
+                if (cell.classList.contains('merged')) {
+                    const row = parseInt(cell.dataset.row);
+                    const col = parseInt(cell.dataset.col);
+                    const mergeKey = `${row}-${col}`;
+                    
+                    if (mergedCells.has(mergeKey)) {
+                        const mergeInfo = mergedCells.get(mergeKey);
+                        
+                        // Usuń colspan i rowspan
+                        cell.removeAttribute('colspan');
+                        cell.removeAttribute('rowspan');
+                        cell.classList.remove('merged');
+                        
+                        // Pokaż ukryte komórki
+                        mergeInfo.hiddenCells.forEach(hiddenCell => {
+                            const hiddenElement = document.querySelector(`[data-row="${hiddenCell.row}"][data-col="${hiddenCell.col}"]`);
+                            if (hiddenElement) {
+                                hiddenElement.classList.remove('hidden');
+                            }
+                        });
+                        
+                        // Usuń informacje o połączeniu
+                        mergedCells.delete(mergeKey);
+                    }
+                }
+            });
+            
+            generateHTML();
+        }
+        
         function addRow() {
-            const table = document.getElementById('spreadsheetBody');
-            const rowCount = table.rows.length;
-            const row = table.insertRow();
-            const cell = row.insertCell();
-            cell.className = 'row-header';
-            cell.textContent = rowCount + 1;
-            for (let i = 0; i < table.rows[0].cells.length - 1; i++) {
-                const cell = row.insertCell();
+            if (!isAdminMode) return;
+            const tbody = document.getElementById('spreadsheetBody');
+            const rowCount = tbody.children.length;
+            const row = document.createElement('tr');
+            
+            // Nagłówek wiersza
+            const rowHeader = document.createElement('td');
+            rowHeader.className = 'row-header';
+            rowHeader.textContent = rowCount + 1;
+            row.appendChild(rowHeader);
+            
+            // Komórki
+            for (let j = 0; j < 8; j++) {
+                const cell = document.createElement('td');
                 cell.className = 'cell';
-                cell.textContent = '';
+                cell.dataset.row = rowCount;
+                cell.dataset.col = j;
+                
+                cell.addEventListener('click', selectCell);
+                cell.addEventListener('dblclick', editCell);
+                cell.addEventListener('mousedown', startSelection);
+                cell.addEventListener('mouseover', continueSelection);
+                
+                row.appendChild(cell);
             }
-            makeTableEditable();
+            
+            tbody.appendChild(row);
+            generateHTML();
         }
-
+        
         function addColumn() {
-            const headers = document.querySelectorAll('.col-header');
-            const table = document.getElementById('spreadsheet');
-            const newCol = document.createElement('th');
-            newCol.className = 'col-header';
-            newCol.textContent = String.fromCharCode(65 + headers.length);
-            table.rows[0].appendChild(newCol);
-            for (let i = 1; i < table.rows.length; i++) {
-                const cell = table.rows[i].insertCell();
+            if (!isAdminMode) return;
+            // Dodaj nagłówek kolumny
+            const headerRow = document.querySelector('thead tr');
+            const colCount = headerRow.children.length - 1;
+            const colLetter = String.fromCharCode(65 + colCount);
+            
+            const newHeader = document.createElement('th');
+            newHeader.className = 'col-header';
+            newHeader.textContent = colLetter;
+            headerRow.appendChild(newHeader);
+            
+            // Dodaj komórki do wszystkich wierszy
+            const rows = document.querySelectorAll('#spreadsheetBody tr');
+            rows.forEach((row, rowIndex) => {
+                const cell = document.createElement('td');
                 cell.className = 'cell';
-                cell.textContent = '';
+                cell.dataset.row = rowIndex;
+                cell.dataset.col = colCount;
+                
+                cell.addEventListener('click', selectCell);
+                cell.addEventListener('dblclick', editCell);
+                cell.addEventListener('mousedown', startSelection);
+                cell.addEventListener('mouseover', continueSelection);
+                
+                row.appendChild(cell);
+            });
+            
+            generateHTML();
+        }
+        
+function deleteRow() {
+            if (!isAdminMode || !selectedCell) return;
+            
+            const row = parseInt(selectedCell.dataset.row);
+            const rowElement = selectedCell.closest('tr');
+            
+            if (rowElement) {
+                rowElement.remove();
+                
+                // Zaktualizuj numery wierszy
+                const tbody = document.getElementById('spreadsheetBody');
+                const rows = tbody.children;
+                for (let i = 0; i < rows.length; i++) {
+                    const rowHeader = rows[i].querySelector('.row-header');
+                    if (rowHeader) {
+                        rowHeader.textContent = i + 1;
+                    }
+                    
+                    const cells = rows[i].querySelectorAll('.cell');
+                    cells.forEach(cell => {
+                        cell.dataset.row = i;
+                    });
+                }
+                
+                generateHTML();
             }
-            makeTableEditable();
         }
-
-        function deleteRow() {
-            const table = document.getElementById('spreadsheetBody');
-            if (table.rows.length > 1) table.deleteRow(-1);
-        }
-
+        
         function deleteColumn() {
-            const table = document.getElementById('spreadsheet');
-            const colCount = table.rows[0].cells.length;
-            if (colCount > 2) {
-                for (let row of table.rows) row.deleteCell(-1);
+            if (!isAdminMode || !selectedCell) return;
+            
+            const col = parseInt(selectedCell.dataset.col);
+            
+            // Usuń nagłówek kolumny
+            const headerRow = document.querySelector('thead tr');
+            const headers = headerRow.children;
+            if (headers[col + 1]) {
+                headers[col + 1].remove();
             }
+            
+            // Usuń komórki z każdego wiersza
+            const rows = document.querySelectorAll('#spreadsheetBody tr');
+            rows.forEach(row => {
+                const cells = row.children;
+                if (cells[col + 1]) {
+                    cells[col + 1].remove();
+                }
+            });
+            
+            // Zaktualizuj nagłówki kolumn i dataset
+            const newHeaders = headerRow.querySelectorAll('.col-header');
+            newHeaders.forEach((header, index) => {
+                header.textContent = String.fromCharCode(65 + index);
+            });
+            
+            // Zaktualizuj dataset dla wszystkich komórek
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('.cell');
+                cells.forEach((cell, index) => {
+                    cell.dataset.col = index;
+                });
+            });
+            
+            generateHTML();
         }
-
-        function changeTextColor(color) {
-            document.querySelectorAll('.cell').forEach(cell => cell.style.color = color);
-        }
-
-        function changeBackgroundColor(color) {
-            document.querySelectorAll('.cell').forEach(cell => cell.style.backgroundColor = color);
-        }
-
-        function changeFontSize(size) {
-            document.querySelectorAll('.cell').forEach(cell => cell.style.fontSize = size + 'px');
-        }
+        
+        document.addEventListener('keydown', (e) => {
+            if (!isAdminMode) return;
+            
+            if (e.key === 'Delete' && selectedCells.length > 0) {
+                selectedCells.forEach(cell => {
+                    cell.textContent = '';
+                });
+                generateHTML();
+            }
+            
+            if (e.ctrlKey && e.key === 'c' && selectedCells.length > 0) {
+                // Kopiuj zaznaczone komórki
+                const data = selectedCells.map(cell => cell.textContent).join('\t');
+                navigator.clipboard.writeText(data).then(() => {
+                    showStatus('Skopiowano komórki!', 'success');
+                });
+            }
+        });
+        
+        // Inicjalizacja
+        document.addEventListener('DOMContentLoaded', () => {
+            initSpreadsheet();
+        });
     </script>
 </body>
 </html>
