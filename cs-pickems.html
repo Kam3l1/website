@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CS Pickems - Kam3l</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #121212;
+            font-family: Arial, sans-serif;
+            color: white;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .back-btn {
+            color: white;
+            font-size: 24px;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .back-btn:hover {
+            color: #00ff77;
+        }
+
+        .title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: linear-gradient(90deg, #00ff77, #ff00e6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        .spreadsheet-container {
+            background: #1a1a1a;
+            border-radius: 10px;
+            padding: 0; /* Keep padding 0 if scroll wrapper handles inner content */
+            box-shadow: 0 0 20px rgba(0, 255, 119, 0.1);
+            overflow: hidden; /* Important for border-radius clipping */
+            border: 2px solid #333;
+        }
+
+        /* --- ADDED --- */
+        .table-scroll-wrapper {
+            overflow-x: auto; /* Enable horizontal scrolling */
+            position: relative; /* For absolute positioning of range-selector */
+            /* max-width: 100%; Ensure it doesn't overflow spreadsheet-container if it has padding */
+        }
+        /* --- END ADDED --- */
+
+        .spreadsheet {
+            /* width: 100%; */ /* MODIFIED: Removed, width will be determined by content */
+            min-width: 100%; /* ADDED: Ensures table tries to fill scroll wrapper, but can expand */
+            border-collapse: separate;
+            border-spacing: 0;
+            background: #2a2a2a;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 11px;
+        }
+
+        .row-header {
+            background: #3a3a3a;
+            border: 1px solid #555;
+            text-align: center;
+            font-weight: bold;
+            width: 40px;
+            min-width: 40px;
+            padding: 4px;
+            color: #ccc;
+            user-select: none;
+            position: sticky; /* Optional: make row headers sticky */
+            left: 0; /* Required for sticky */
+            z-index: 2; /* To appear above cells during scroll */
+        }
+
+        .col-header {
+            background: #3a3a3a;
+            border: 1px solid #555;
+            text-align: center;
+            font-weight: bold;
+            padding: 4px 8px;
+            color: #ccc;
+            user-select: none;
+            min-width: 80px;
+            position: sticky; /* Optional: make column headers sticky */
+            top: 0; /* Required for sticky */
+            z-index: 3; /* To appear above row headers and cells */
+        }
+        
+        /* Ensure first th (empty for row numbers) is also sticky if col-headers are sticky */
+        #spreadsheet thead tr th:first-child {
+            position: sticky;
+            top: 0;
+            left: 0;
+            z-index: 4; /* Highest z-index for the corner */
+            background: #3a3a3a; /* Match col-header background */
+        }
+
+
+        .cell {
+            border: 1px solid #555;
+            padding: 4px 8px;
+            background: #2a2a2a;
+            color: white;
+            min-width: 80px;
+            height: 20px;
+            position: relative;
+            cursor: cell;
+        }
+
+        .cell:hover {
+            background: #3a3a3a;
+        }
+
+        .cell.selected {
+            background: #4285f4 !important;
+            border: 2px solid #66a3ff !important;
+            color: white !important;
+        }
+
+        .cell.editing {
+            padding: 0;
+        }
+
+        .cell-input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            padding: 4px 8px;
+            font-family: inherit;
+            font-size: inherit;
+            background: #2a2a2a;
+            color: white;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        .admin-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: #333;
+            border: 1px solid #555;
+            color: #888;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            opacity: 0.3;
+            transition: opacity 0.3s;
+            z-index: 1000;
+        }
+
+        .admin-btn:hover {
+            opacity: 0.8;
+        }
+
+        .admin-panel {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #2a2a2a;
+            border: 2px solid #444;
+            border-radius: 8px;
+            padding: 20px;
+            z-index: 1001;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+            min-width: 400px;
+            max-width: 90vw; /* Ensure panel is not too wide on small screens */
+        }
+
+        .admin-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+        }
+
+        .password-input {
+            padding: 10px;
+            background: #333;
+            border: 1px solid #555;
+            color: white;
+            border-radius: 4px;
+            margin-right: 10px;
+            width: calc(100% - 125px); /* Adjust width based on button */
+            max-width: 200px;
+        }
+
+        .confirm-btn {
+            background: linear-gradient(45deg, #00ff77, #ff00e6);
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .close-btn {
+            background: #ff4757;
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            float: right;
+            margin-left: 10px;
+        }
+
+        .toolbar {
+            display: none;
+            background: #3a3a3a;
+            padding: 8px;
+            border-bottom: 1px solid #555;
+            gap: 10px;
+            flex-wrap: wrap;
+            /* MODIFIED: Toolbar is outside scroll wrapper, so it won't scroll */
+        }
+
+        .toolbar.visible {
+            display: flex;
+        }
+
+        .tool-btn {
+            background: #2a2a2a;
+            border: 1px solid #555;
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            color: white;
+        }
+
+        .tool-btn:hover {
+            background: #4a4a4a;
+        }
+
+        .tool-btn.active {
+            background: #4285f4;
+            color: white;
+        }
+
+        .tool-btn.merge { background: #00ff77; color: #000; }
+        .tool-btn.unmerge { background: #ff4757; color: white; }
+        .tool-btn.copy { background: #ff9500; color: white; }
+
+        .color-picker {
+            width: 30px;
+            height: 25px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+
+        .font-size-input {
+            width: 50px;
+            background: #2a2a2a;
+            border: 1px solid #555;
+            color: white;
+            padding: 4px;
+            border-radius: 3px;
+            text-align: center;
+        }
+
+        .range-selector {
+            position: absolute; /* Positioned relative to table-scroll-wrapper */
+            border: 2px dashed #4285f4;
+            background: rgba(66, 133, 244, 0.1);
+            pointer-events: none;
+            display: none;
+            z-index: 1; /* Above cells but below headers if they are sticky */
+        }
+
+        .status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #333;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #ccc;
+            z-index: 1000;
+        }
+
+        .status.success { background: #00ff77; color: #000; }
+        .status.error { background: #ff4757; color: white; }
+
+        .copy-textarea {
+            width: 100%;
+            min-height: 150px; /* Reduced height a bit */
+            max-height: 40vh;
+            background: #333;
+            border: 1px solid #555;
+            color: white;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            border-radius: 4px;
+            margin: 10px 0;
+            resize: vertical;
+            word-break: break-all;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px; /* Less padding on small screens */
+            }
+            .title {
+                font-size: 1.8rem; /* Smaller title */
+            }
+            .spreadsheet {
+                font-size: 10px;
+            }
+            .cell, .col-header {
+                min-width: 70px; /* Slightly increased min-width for touch friendliness */
+                padding: 3px 6px;
+            }
+            .row-header {
+                min-width: 30px;
+                padding: 3px;
+            }
+            .admin-panel {
+                padding: 15px;
+            }
+            .password-input {
+                width: calc(100% - 115px); /* Adjust for smaller confirm button */
+            }
+             .toolbar {
+                padding: 6px;
+                gap: 5px;
+            }
+            .tool-btn, .font-size-input {
+                padding: 3px 6px;
+                font-size: 11px;
+            }
+            .color-picker {
+                width: 25px;
+                height: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-overlay" id="adminOverlay"></div>
+    
+    <div class="admin-panel" id="adminPanel">
+        <button class="close-btn" onclick="closeAdminPanel()">×</button>
+        <h3 style="color: white; margin-top: 0;">Admin Mode (even if you guess the password you cant change anything)</h3>
+        <div>
+            <input type="password" class="password-input" id="passwordInput" placeholder="Password...">
+            <button class="confirm-btn" onclick="checkPassword()">Enter</button>
+        </div>
+        
+        <div id="copySection" style="display: none; margin-top: 20px; border-top: 1px solid #555; padding-top: 20px;">
+            <h4 style="color: white; margin: 0 0 10px 0;">Skopiuj dane tabeli</h4>
+            <p style="color: #ccc; font-size: 12px; margin-bottom: 10px;">Skopiuj poniższy zakodowany ciąg i wklej go do zmiennej <code>INITIAL_TABLE_DATA</code> w pliku HTML:</p>
+            <textarea class="copy-textarea" id="tableDataOutput" readonly></textarea>
+            <button class="confirm-btn" onclick="copyToClipboard()" style="width: 100%; margin-top: 10px;">📋 Skopiuj dane do schowka</button>
+        </div>
+    </div>
+
+    <div class="header">
+        <a href="index.html" class="back-btn">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h1 class="title">
+            <i class="fas fa-crosshairs"></i> Austin Major 2025 Pickems (Stage 1)
+        </h1>
+        <div></div>
+    </div>
+
+    <div class="spreadsheet-container">
+        <div class="toolbar" id="toolbar">
+            <button class="tool-btn" onclick="formatBold()"><b>B</b></button>
+            <button class="tool-btn" onclick="formatItalic()"><i>I</i></button>
+            <button class="tool-btn" onclick="formatUnderline()"><u>U</u></button>
+            <span style="margin: 0 5px; color: #666;">|</span>
+            <button class="tool-btn" onclick="alignLeft()">⬅️</button>
+            <button class="tool-btn" onclick="alignCenter()">↔️</button>
+            <button class="tool-btn" onclick="alignRight()">➡️</button>
+            <span style="margin: 0 5px; color: #666;">|</span>
+            <input type="number" class="font-size-input" id="fontSizeInput" value="11" min="8" max="24" title="Rozmiar czcionki" onchange="changeFontSize()">
+            <span style="margin: 0 5px; color: #666;">|</span>
+            <input type="color" class="color-picker" id="bgColorPicker" value="#2a2a2a" onchange="changeBgColor()" title="Kolor tła kafelka">
+            <input type="color" class="color-picker" id="textColorPicker" value="#ffffff" onchange="changeTextColor()" title="Kolor tekstu">
+            <span style="margin: 0 5px; color: #666;">|</span>
+            <button class="tool-btn merge" onclick="mergeCells()">🔗 Połącz</button>
+            <button class="tool-btn unmerge" onclick="unmergeCells()">🔓 Rozłącz</button>
+            <span style="margin: 0 5px; color: #666;">|</span>
+            <button class="tool-btn" onclick="addRow()">+ Wiersz</button>
+            <button class="tool-btn" onclick="addColumn()">+ Kolumna</button>
+            <button class="tool-btn" onclick="deleteRow()">- Wiersz</button>
+            <button class="tool-btn" onclick="deleteColumn()">- Kolumna</button>
+            <span style="margin: 0 5px; color: #666;">|</span>
+            <button class="tool-btn copy" onclick="updateSerializedDataOutputAndShowInPanel()">📋 Kopiuj Dane</button>
+        </div>
+        
+        <!-- --- ADDED WRAPPER --- -->
+        <div class="table-scroll-wrapper" id="tableScrollWrapper">
+            <table class="spreadsheet" id="spreadsheet">
+                <thead>
+                    <tr>
+                        <th class="row-header"></th>
+                        <!-- Column headers A, B, C... will be generated by JS -->
+                    </tr>
+                </thead>
+                <tbody id="spreadsheetBody">
+                    <!-- Spreadsheet rows and cells will be generated by JS -->
+                </tbody>
+            </table>
+            <!-- --- MOVED range-selector INSIDE --- -->
+            <div class="range-selector" id="rangeSelector"></div>
+        </div>
+        <!-- --- END WRAPPER --- -->
+    </div>
+
+    <button class="admin-btn" onclick="showAdminPanel()">⚙</button>
+    <div class="status" id="status">Gotowy</div>
+
+    <script>
+        const INITIAL_TABLE_DATA = "eyJyb3dzIjoyMiwiY29scyI6MTEsImNlbGxEYXRhIjp7IjAsMCI6eyJ0ZXh0IjoiUGlja2VtIG1hZGUgYnk6Iiwic3R5bGUiOnsidGV4dEFsaWduIjoiY2VudGVyIiwiYmFja2dyb3VuZENvbG9yIjoicmdiKDI0OCwgOTMsIDE5OSkifX0sIjAsMSI6eyJ0ZXh0IjoiMzowIiwic3R5bGUiOnsidGV4dEFsaWduIjoiY2VudGVyIiwiYmFja2dyb3VuZENvbG9yIjoicmdiKDc1LCAxODIsIDczKSJ9LCJjb2xzcGFuIjoyfSwiMCwzIjp7InRleHQiOiIzOjEgLyAzOjIiLCJzdHlsZSI6eyJ0ZXh0QWxpZ24iOiJjZW50ZXIiLCJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoOTQsIDE4NiwgMTM0KSJ9LCJjb2xzcGFuIjo2fSwiMCw5Ijp7InRleHQiOiIwOjMiLCJzdHlsZSI6eyJ0ZXh0QWxpZ24iOiJjZW50ZXIiLCJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoMjU1LCAwLCAwKSJ9LCJjb2xzcGFuIjoyfSwiMSwwIjp7InRleHQiOiJLYW0zbCIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYigzMywgMzQsIDUzKSJ9fSwiMSwxIjp7InRleHQiOiJIZXJvaWMiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNTgsIDEzMiwgNTcpIn19LCIxLDIiOnsidGV4dCI6IkNvbXBsZXhpdHkiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNTgsIDEzMiwgNTcpIn19LCIxLDMiOnsidGV4dCI6Ik9HIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDcwLCAxMzQsIDk4KSJ9fSwiMSw0Ijp7InRleHQiOiJGbHV4byIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig3MCwgMTM0LCA5OCkifX0sIjEsNSI6eyJ0ZXh0IjoiQmV0Qm9vbSIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig3MCwgMTM0LCA5OCkifX0sIjEsNiI6eyJ0ZXh0IjoiQjgiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNzAsIDEzNCwgOTgpIn19LCIxLDciOnsidGV4dCI6IldpbGRjYXJkIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDcwLCAxMzQsIDk4KSJ9fSwiMSw4Ijp7InRleHQiOiJJbXBlcmlhbCIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig3MCwgMTM0LCA5OCkifX0sIjEsOSI6eyJ0ZXh0IjoiQ2hpbmdnaXMgV2FycmlvcnMiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoOTcsIDAsIDApIn19LCIxLDEwIjp7InRleHQiOiJGbHlRdWVzdCIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig5NywgMCwgMCkifX0sIjIsMCI6eyJ0ZXh0IjoiUGltcCIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYigzMywgMzQsIDUzKSJ9fSwiMywwIjp7InRleHQiOiJIYXdrYSIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYigzMywgMzQsIDUzKSJ9fSwiMywxIjp7InRleHQiOiJIZXJvaWMiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNTgsIDEzMiwgNTcpIn19LCIzLDIiOnsidGV4dCI6IkNvbXBsZXhpdHkiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNTgsIDEzMiwgNTcpIn19LCIzLDMiOnsidGV4dCI6IkxlZ2FjeSIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig2NCwgMTI0LCA5MSkifX0sIjMsNCI6eyJ0ZXh0IjoiTlJHIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDY4LCAxMzEsIDk2KSJ9fSwiMyw1Ijp7InRleHQiOiJCZXRCb29tIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDY4LCAxMzEsIDk2KSJ9fSwiMyw2Ijp7InRleHQiOiJCOCIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig2OCwgMTMxLCA5NikifX0sIjMsNyI6eyJ0ZXh0IjoiV2lsZGNhcmQiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNjgsIDEzMSwgOTYpIn19LCIzLDgiOnsidGV4dCI6IlR5bG9vIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDY4LCAxMzEsIDk2KSJ9fSwiMyw5Ijp7InRleHQiOiJDaGluZ2dpcyBXYXJyaW9ycyIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig5NywgMCwgMCkifX0sIjMsMTAiOnsidGV4dCI6IkZsdXhvIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDk3LCAwLCAwKSJ9fSwiNCwwIjp7InRleHQiOiJGbDBtIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDMzLCAzNCwgNTMpIn19LCI1LDAiOnsidGV4dCI6IkF1c3RpbkNTIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDMzLCAzNCwgNTMpIn19LCI2LDAiOnsidGV4dCI6Ik96em55Iiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDMzLCAzNCwgNTMpIn19LCI2LDEiOnsidGV4dCI6Ikhlcm9pYyIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig1OCwgMTMyLCA1NykifX0sIjYsMiI6eyJ0ZXh0IjoiQ29tcGxleGl0eSIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig1OCwgMTMyLCA1NykifX0sIjYsMyI6eyJ0ZXh0IjoiT0ciLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNjQsIDEyNCwgOTEpIn19LCI2LDQiOnsidGV4dCI6IkZseVF1ZXN0Iiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDY0LCAxMjQsIDkxKSJ9fSwiNiw1Ijp7InRleHQiOiJCZXRCb29tIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDY0LCAxMjQsIDkxKSJ9fSwiNiw2Ijp7InRleHQiOiJCOCIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig2NCwgMTI0LCA5MSkifX0sIjYsNyI6eyJ0ZXh0IjoiV2lsZGNhcmQiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNjQsIDEyNCwgOTEpIn19LCI2LDgiOnsidGV4dCI6IlR5bG9vIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDY0LCAxMjQsIDkxKSJ9fSwiNiw5Ijp7InRleHQiOiJDaGluZ2dpcyBXYXJyaW9ycyIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig5NywgMCwgMCkifX0sIjYsMTAiOnsidGV4dCI6IkZsdXhvIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDk3LCAwLCAwKSJ9fSwiNywwIjp7InRleHQiOiJPaG5lcGl4ZWwgKG5hdXIpIiwic3R5bGUiOnsiZm9udFNpemUiOiIxMHB4IiwiYmFja2dyb3VuZENvbG9yIjoicmdiKDMzLCAzNCwgNTMpIn19LCI3LDEiOnsidGV4dCI6Ikhlcm9pYyIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig1OCwgMTMyLCA1NykifX0sIjcsMiI6eyJ0ZXh0IjoiQ29tcGxleGl0eSIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig1OCwgMTMyLCA1NykifX0sIjcsMyI6eyJ0ZXh0IjoiT0ciLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNjQsIDEyNCwgOTEpIn19LCI3LDQiOnsidGV4dCI6IkZseVF1ZXN0Iiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDY0LCAxMjQsIDkxKSJ9fSwiNyw1Ijp7InRleHQiOiJCZXRCb29tIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDY0LCAxMjQsIDkxKSJ9fSwiNyw2Ijp7InRleHQiOiJCOCIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig2NCwgMTI0LCA5MSkifX0sIjcsNyI6eyJ0ZXh0IjoiQ2hpbmdnaXMgV2FycmlvcnMiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNjQsIDEyNCwgOTEpIn19LCI3LDgiOnsidGV4dCI6IkltcGVyaWFsIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDY0LCAxMjQsIDkxKSJ9fSwiNyw5Ijp7InRleHQiOiJOUkciLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoOTcsIDAsIDApIn19LCI3LDEwIjp7InRleHQiOiJMeW5uIFZpc2lvbiIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig5NywgMCwgMCkifX0sIjgsMCI6eyJ0ZXh0IjoiQXJyb3djcyIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYigzMywgMzQsIDUzKSJ9fSwiOSwwIjp7InRleHQiOiJUcmlsbHVYZSIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYigzMywgMzQsIDUzKSJ9fSwiOSwxIjp7InRleHQiOiJIZXJvaWMiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNTgsIDEzMiwgNTcpIn19LCI5LDIiOnsidGV4dCI6IkNvbXBsZXhpdHkiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNTgsIDEzMiwgNTcpIn19LCI5LDMiOnsidGV4dCI6IkxlZ2FjeSIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig2MCwgMTE2LCA4NSkifX0sIjksNCI6eyJ0ZXh0IjoiRmx5UXVlc3QiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNjAsIDExNiwgODUpIn19LCI5LDUiOnsidGV4dCI6IkJldEJvb20iLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNjAsIDExNiwgODUpIn19LCI5LDYiOnsidGV4dCI6IkI4Iiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDYwLCAxMTYsIDg1KSJ9fSwiOSw3Ijp7InRleHQiOiJXaWxkY2FyZCIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig2MCwgMTE2LCA4NSkifX0sIjksOCI6eyJ0ZXh0IjoiVHlsb28iLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNjAsIDExNiwgODUpIn19LCI5LDkiOnsidGV4dCI6IkNoaW5nZ2lzIFdhcnJpb3JzIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDk3LCAwLCAwKSJ9fSwiOSwxMCI6eyJ0ZXh0IjoiRmx1eG8iLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoOTcsIDAsIDApIn19LCIxMCwwIjp7InRleHQiOiJOYXJ0T3V0SGVyZSIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYigzMywgMzQsIDUzKSJ9fSwiMTAsMSI6eyJ0ZXh0IjoiSGVyb2ljIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDU4LCAxMzIsIDU3KSJ9fSwiMTAsMiI6eyJ0ZXh0IjoiQmV0Qm9vbSIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig1OCwgMTMyLCA1NykifX0sIjEwLDMiOnsidGV4dCI6IkxlZ2FjeSIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig2MCwgMTE2LCA4NSkifX0sIjEwLDQiOnsidGV4dCI6IkltcGVyaWFsIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDYwLCAxMTYsIDg1KSJ9fSwiMTAsNSI6eyJ0ZXh0IjoiQ29tcGxleGl0eSIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig2MCwgMTE2LCA4NSkifX0sIjEwLDYiOnsidGV4dCI6IkI4Iiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDYwLCAxMTYsIDg1KSJ9fSwiMTAsNyI6eyJ0ZXh0IjoiV2lsZENhcmQiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNjAsIDExNiwgODUpIn19LCIxMCw4Ijp7InRleHQiOiJUeWxvbyIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig2MCwgMTE2LCA4NSkifX0sIjEwLDkiOnsidGV4dCI6IkNoaW5nZ2lzIFdhcnJpb3JzIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDk3LCAwLCAwKSJ9fSwiMTAsMTAiOnsidGV4dCI6Ikx5bm4gVmlzaW9uIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDk3LCAwLCAwKSJ9fSwiMTEsMCI6eyJ0ZXh0IjoiVGhvdXIiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoMzMsIDM0LCA1MykifX0sIjExLDEiOnsidGV4dCI6Ikhlcm9pYyIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig1OCwgMTMxLCA1NykifX0sIjExLDIiOnsidGV4dCI6IkZsdXhvIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDU4LCAxMzEsIDU3KSJ9fSwiMTEsMyI6eyJ0ZXh0IjoiT0ciLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNjAsIDExNiwgODUpIn19LCIxMSw0Ijp7InRleHQiOiJCZXRCb29tIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDYwLCAxMTYsIDg1KSJ9fSwiMTEsNSI6eyJ0ZXh0IjoiQ29tcGxleGl0eSIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig2MCwgMTE2LCA4NSkifX0sIjExLDYiOnsidGV4dCI6IkI4Iiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDYwLCAxMTYsIDg1KSJ9fSwiMTEsNyI6eyJ0ZXh0IjoiTlJHIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDYwLCAxMTYsIDg1KSJ9fSwiMTEsOCI6eyJ0ZXh0IjoiVHlsb28iLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNjAsIDExNiwgODUpIn19LCIxMSw5Ijp7InRleHQiOiJDaGluZ2dpcyBXYXJyaW9ycyIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig5NywgMCwgMCkifX0sIjExLDEwIjp7InRleHQiOiJNZXRpenBvcnQiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoOTcsIDAsIDApIn19LCIxMiwwIjp7InRleHQiOiJMYXVuZGVycyIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYigzMywgMzQsIDUzKSJ9fSwiMTIsMSI6eyJ0ZXh0IjoiSGVyb2ljIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDU4LCAxMzEsIDU3KSJ9fSwiMTIsMiI6eyJ0ZXh0IjoiQ29tcGxleGl0eSIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig1OCwgMTMxLCA1NykifX0sIjEyLDMiOnsidGV4dCI6Ikx5bm4gVmlzaW9uIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDYwLCAxMTYsIDg1KSJ9fSwiMTIsNCI6eyJ0ZXh0IjoiRmx5UXVlc3QiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNjAsIDExNiwgODUpIn19LCIxMiw1Ijp7InRleHQiOiJCZXRCb29tIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDYwLCAxMTYsIDg1KSJ9fSwiMTIsNiI6eyJ0ZXh0IjoiQjgiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNjAsIDExNiwgODUpIn19LCIxMiw3Ijp7InRleHQiOiJXaWxkQ2FyZCIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig2MCwgMTE2LCA4NSkifX0sIjEyLDgiOnsidGV4dCI6IlR5bG9vIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDYwLCAxMTYsIDg1KSJ9fSwiMTIsOSI6eyJ0ZXh0IjoiQ2hpbmdnaXMgV2FycmlvcnMiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoOTcsIDAsIDApIn19LCIxMiwxMCI6eyJ0ZXh0IjoiTGVnYWN5Iiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDk3LCAwLCAwKSJ9fX19"; 
+
+        let isAdminMode = false;
+        let selectedCell = null;
+        let selectedCells = [];
+        let isSelecting = false;
+        let startCellForSelection = null;
+        
+        const ADMIN_PASSWORD_HASH = "ce303098f3cd33f4489a00276812742e876087a8525fafaaa4a2e386ddc7dcf5";
+        
+        function showStatus(message, type = 'normal') {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = 'status';
+            if (type === 'success') statusEl.classList.add('success');
+            if (type === 'error') statusEl.classList.add('error');
+            
+            setTimeout(() => {
+                statusEl.textContent = 'Gotowy';
+                statusEl.className = 'status';
+            }, 3000);
+        }
+        
+        function initSpreadsheet(initialDataString = INITIAL_TABLE_DATA) {
+            const tbody = document.getElementById('spreadsheetBody');
+            tbody.innerHTML = '';
+            const headerRow = document.querySelector('#spreadsheet thead tr');
+            while (headerRow.children.length > 1) {
+                headerRow.removeChild(headerRow.lastChild);
+            }
+
+            let tableConfig = {
+                rows: 20,
+                cols: 8,
+                cellData: {}
+            };
+
+            if (initialDataString && initialDataString.trim() !== "") {
+                try {
+                    const decodedData = atob(initialDataString);
+                    const parsedConfig = JSON.parse(decodedData);
+                    if (parsedConfig && typeof parsedConfig.rows === 'number' && typeof parsedConfig.cols === 'number' && typeof parsedConfig.cellData === 'object') {
+                        tableConfig = parsedConfig;
+                    } else {
+                        showStatus("Nieprawidłowy format danych tabeli. Używam domyślnych.", "error");
+                    }
+                } catch (e) {
+                    showStatus("Błąd ładowania danych tabeli. Używam domyślnych.", "error");
+                }
+            } else {
+                const sampleData = [
+                    ['Streamers', '3:0', '3:2', '3:2', '0:3', '', '', ''],
+                    ['Player1', 'Team A', 'Team B', 'Map1', 'Score', '', '', ''],
+                    ['test', '', '', '', '', '', '', ''],
+                ];
+                tableConfig.rows = Math.max(tableConfig.rows, sampleData.length);
+                sampleData.forEach((rowContent, r) => {
+                    rowContent.forEach((text, c) => {
+                        if (text) {
+                            tableConfig.cellData[`${r},${c}`] = { text };
+                        }
+                    });
+                });
+            }
+
+            for (let j = 0; j < tableConfig.cols; j++) {
+                const colLetter = String.fromCharCode(65 + j);
+                const newHeader = document.createElement('th');
+                newHeader.className = 'col-header';
+                newHeader.textContent = colLetter;
+                headerRow.appendChild(newHeader);
+            }
+
+            const numRows = tableConfig.rows;
+            const numCols = tableConfig.cols;
+            const coveredCells = Array(numRows).fill(null).map(() => Array(numCols).fill(false));
+
+            for (let i = 0; i < numRows; i++) {
+                const row = document.createElement('tr');
+                
+                const rowHeader = document.createElement('td');
+                rowHeader.className = 'row-header';
+                rowHeader.textContent = i + 1;
+                row.appendChild(rowHeader);
+                
+                for (let j = 0; j < numCols; j++) {
+                    if (coveredCells[i][j]) continue;
+
+                    const cell = document.createElement('td');
+                    cell.className = 'cell';
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    
+                    const cellKey = `${i},${j}`;
+                    const data = tableConfig.cellData[cellKey];
+
+                    if (data) {
+                        cell.textContent = data.text || '';
+                        if (data.style) Object.assign(cell.style, data.style);
+                        
+                        const rSpan = data.rowspan || 1;
+                        const cSpan = data.colspan || 1;
+
+                        if (rSpan > 1 || cSpan > 1) {
+                            cell.setAttribute('rowspan', rSpan);
+                            cell.setAttribute('colspan', cSpan);
+                            cell.classList.add('merged');
+                            for (let dr = 0; dr < rSpan; dr++) {
+                                for (let dc = 0; dc < cSpan; dc++) {
+                                    if (dr === 0 && dc === 0) continue;
+                                    if (i + dr < numRows && j + dc < numCols) {
+                                        coveredCells[i + dr][j + dc] = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    cell.addEventListener('click', handleCellClick);
+                    cell.addEventListener('dblclick', handleCellDblClick);
+                    cell.addEventListener('mousedown', handleCellMouseDown);
+                    cell.addEventListener('mouseover', handleCellMouseOver);
+                    row.appendChild(cell);
+                }
+                tbody.appendChild(row);
+            }
+        }
+
+        function serializeTableDataToString() {
+            const tbody = document.getElementById('spreadsheetBody');
+            const headerRow = document.querySelector('#spreadsheet thead tr');
+            const rows = tbody.children.length;
+            const cols = headerRow.children.length - 1;
+            const cellData = {};
+
+            for (let i = 0; i < rows; i++) {
+                const rowElement = tbody.children[i];
+                const cellElements = Array.from(rowElement.children).filter(c => c.classList.contains('cell'));
+
+                for (const cell of cellElements) {
+                    const r = parseInt(cell.dataset.row);
+                    const c = parseInt(cell.dataset.col);
+                    const key = `${r},${c}`;
+                    const data = {};
+                    if (cell.textContent) data.text = cell.textContent;
+
+                    const styles = {};
+                    if (cell.style.fontWeight && cell.style.fontWeight !== 'normal') styles.fontWeight = cell.style.fontWeight;
+                    if (cell.style.fontStyle && cell.style.fontStyle !== 'normal') styles.fontStyle = cell.style.fontStyle;
+                    if (cell.style.textDecoration && !cell.style.textDecoration.includes('none')) styles.textDecoration = cell.style.textDecoration;
+                    if (cell.style.textAlign && cell.style.textAlign !== 'start' && cell.style.textAlign !== 'left' && cell.style.textAlign !== '') styles.textAlign = cell.style.textAlign;
+                    if (cell.style.fontSize && cell.style.fontSize !== '11px') styles.fontSize = cell.style.fontSize;
+                    if (cell.style.backgroundColor && cell.style.backgroundColor !== 'rgb(42, 42, 42)' && cell.style.backgroundColor !== '#2a2a2a') styles.backgroundColor = cell.style.backgroundColor;
+                    if (cell.style.color && cell.style.color !== 'rgb(255, 255, 255)' && cell.style.color !== 'white') styles.color = cell.style.color;
+                    
+                    if (Object.keys(styles).length > 0) data.style = styles;
+
+                    const colspan = cell.getAttribute('colspan');
+                    const rowspan = cell.getAttribute('rowspan');
+                    if (colspan && parseInt(colspan) > 1) data.colspan = parseInt(colspan);
+                    if (rowspan && parseInt(rowspan) > 1) data.rowspan = parseInt(rowspan);
+                    
+                    if (data.text || data.style || data.colspan || data.rowspan) cellData[key] = data;
+                }
+            }
+            const tableConfig = { rows, cols, cellData };
+            return btoa(JSON.stringify(tableConfig));
+        }
+        
+        function updateSerializedDataOutput() {
+            if (!isAdminMode) return;
+            document.getElementById('tableDataOutput').value = serializeTableDataToString();
+        }
+
+        function updateSerializedDataOutputAndShowInPanel() {
+            if (!isAdminMode) {
+                showStatus("Tylko administrator może wykonać tę akcję.", "error");
+                return;
+            }
+            updateSerializedDataOutput();
+            showAdminPanel();
+            document.getElementById('tableDataOutput').focus();
+            showStatus('Dane tabeli gotowe do skopiowania w panelu administratora.', 'success');
+        }
+
+        function showAdminPanel() {
+            document.getElementById('adminOverlay').style.display = 'block';
+            document.getElementById('adminPanel').style.display = 'block';
+            document.getElementById('passwordInput').focus();
+        }
+        
+        function closeAdminPanel() {
+            document.getElementById('adminOverlay').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'none';
+            document.getElementById('passwordInput').value = '';
+            if (!isAdminMode) document.getElementById('copySection').style.display = 'none';
+        }
+        
+        async function checkPassword() {
+            const password = document.getElementById('passwordInput').value;
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+            
+            if (hashHex === ADMIN_PASSWORD_HASH) {
+                isAdminMode = true;
+                document.getElementById('toolbar').classList.add('visible');
+                document.getElementById('copySection').style.display = 'block';
+                updateSerializedDataOutput();
+                showStatus('Tryb administratora aktywowany!', 'success');
+            } else {
+                isAdminMode = false;
+                document.getElementById('toolbar').classList.remove('visible');
+                showStatus('Nieprawidłowe hasło!', 'error');
+                document.getElementById('passwordInput').value = '';
+                document.getElementById('copySection').style.display = 'none';
+            }
+        }
+        
+        function copyToClipboard() {
+            const textarea = document.getElementById('tableDataOutput');
+            textarea.select();
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(textarea.value).then(() => {
+                    showStatus('Dane tabeli skopiowane do schowka!', 'success');
+                }).catch(err => {
+                    try { document.execCommand('copy'); showStatus('Dane tabeli skopiowane (fallback)!', 'success'); }
+                    catch (e) { showStatus('Błąd podczas kopiowania: ' + e.message, 'error'); }
+                });
+            } else {
+                try { document.execCommand('copy'); showStatus('Dane tabeli skopiowane (fallback)!', 'success'); }
+                catch (err) { showStatus('Błąd podczas kopiowania', 'error'); }
+            }
+        }
+        
+        function handleCellClick(e) {
+            const targetCell = e.target.closest('.cell');
+            if (!targetCell) return;
+
+            if (selectedCell) selectedCell.classList.remove('selected');
+            selectedCell = targetCell;
+            selectedCell.classList.add('selected');
+            
+            selectedCells.forEach(cell => cell.classList.remove('selected'));
+            selectedCells = [selectedCell];
+
+            if (isAdminMode) {
+                document.getElementById('fontSizeInput').value = parseInt(selectedCell.style.fontSize) || 11;
+                document.getElementById('bgColorPicker').value = rgbToHex(selectedCell.style.backgroundColor) || '#2a2a2a';
+                document.getElementById('textColorPicker').value = rgbToHex(selectedCell.style.color) || '#ffffff';
+            }
+        }
+        
+        function handleCellDblClick(e) {
+            if (!isAdminMode) return;
+            const cell = e.target.closest('.cell');
+            if (!cell || cell.classList.contains('editing')) return;
+            
+            const currentText = cell.textContent;
+            cell.classList.add('editing');
+            cell.innerHTML = `<input type="text" class="cell-input" value="${currentText}">`;
+            
+            const input = cell.querySelector('.cell-input');
+            input.focus();
+            input.select();
+            
+            input.addEventListener('blur', () => finishEdit(cell, input), { once: true }); // Removed currentText from here
+            input.addEventListener('keydown', (ev) => {
+                if (ev.key === 'Enter') input.blur();
+                else if (ev.key === 'Escape') {
+                    // Check if cell still exists before manipulating
+                    if(cell && cell.classList.contains('editing')) {
+                        cell.textContent = currentText;
+                        cell.classList.remove('editing');
+                        // cell.innerHTML = currentText; // Not needed, textContent is enough
+                    }
+                }
+            });
+        }
+        
+        function finishEdit(cell, input) { // Removed originalText parameter
+            if (!cell || !cell.classList.contains('editing')) return;
+            cell.textContent = input.value;
+            cell.classList.remove('editing');
+            if (isAdminMode) updateSerializedDataOutput();
+        }
+        
+        function handleCellMouseDown(e) {
+            const targetCell = e.target.closest('.cell');
+            if (!isAdminMode || !targetCell) return;
+            
+            isSelecting = true;
+            startCellForSelection = targetCell;
+            
+            selectedCells.forEach(sc => sc.classList.remove('selected'));
+            selectedCell = targetCell;
+            selectedCell.classList.add('selected');
+            selectedCells = [selectedCell];
+            document.getElementById('rangeSelector').style.display = 'none';
+        }
+        
+        function handleCellMouseOver(e) {
+            if (!isSelecting || !isAdminMode) return;
+            const currentCell = e.target.closest('.cell');
+            if (!currentCell || !startCellForSelection) return;
+
+            const startRow = parseInt(startCellForSelection.dataset.row);
+            const startCol = parseInt(startCellForSelection.dataset.col);
+            const endRow = parseInt(currentCell.dataset.row);
+            const endCol = parseInt(currentCell.dataset.col);
+            
+            selectedCells.forEach(cell => cell.classList.remove('selected'));
+            selectedCells = [];
+            
+            const minRow = Math.min(startRow, endRow);
+            const maxRow = Math.max(startRow, endRow);
+            const minCol = Math.min(startCol, endCol);
+            const maxCol = Math.max(startCol, endCol);
+            
+            const rangeSelector = document.getElementById('rangeSelector');
+            const firstCellElem = document.querySelector(`td.cell[data-row="${minRow}"][data-col="${minCol}"]`);
+            const lastCellElem = document.querySelector(`td.cell[data-row="${maxRow}"][data-col="${maxCol}"]`);
+
+            if (!firstCellElem || !lastCellElem) return;
+
+            const firstCellRect = firstCellElem.getBoundingClientRect();
+            const lastCellRect = lastCellElem.getBoundingClientRect();
+            
+            // --- MODIFIED for scroll wrapper ---
+            const scrollWrapper = document.getElementById('tableScrollWrapper');
+            const scrollWrapperRect = scrollWrapper.getBoundingClientRect();
+
+            rangeSelector.style.left = (firstCellRect.left - scrollWrapperRect.left + scrollWrapper.scrollLeft) + 'px';
+            rangeSelector.style.top = (firstCellRect.top - scrollWrapperRect.top + scrollWrapper.scrollTop) + 'px';
+            rangeSelector.style.width = (lastCellRect.right - firstCellRect.left) + 'px';
+            rangeSelector.style.height = (lastCellRect.bottom - firstCellRect.top) + 'px';
+            // --- END MODIFICATION ---
+            rangeSelector.style.display = 'block';
+
+            for (let r = minRow; r <= maxRow; r++) {
+                for (let c = minCol; c <= maxCol; c++) {
+                    const cell = document.querySelector(`td.cell[data-row="${r}"][data-col="${c}"]`);
+                    if (cell) { 
+                        cell.classList.add('selected');
+                        selectedCells.push(cell);
+                    }
+                }
+            }
+        }
+        
+        document.addEventListener('mouseup', () => {
+            if (isSelecting) {
+                isSelecting = false;
+                document.getElementById('rangeSelector').style.display = 'none';
+                if (selectedCells.length > 0) selectedCell = selectedCells[0];
+            }
+        });
+        
+        function applyStyleToSelectedCells(styleProperty, value, toggleValue = null) {
+            if (!isAdminMode || selectedCells.length === 0) return;
+            selectedCells.forEach(cell => {
+                if (toggleValue && cell.style[styleProperty] === value) {
+                    cell.style[styleProperty] = toggleValue;
+                } else {
+                    cell.style[styleProperty] = value;
+                }
+            });
+            if (isAdminMode) updateSerializedDataOutput();
+        }
+
+        function formatBold() { applyStyleToSelectedCells('fontWeight', 'bold', 'normal'); }
+        function formatItalic() { applyStyleToSelectedCells('fontStyle', 'italic', 'normal'); }
+        function formatUnderline() { applyStyleToSelectedCells('textDecoration', 'underline', 'none'); }
+        function alignLeft() { applyStyleToSelectedCells('textAlign', 'left'); }
+        function alignCenter() { applyStyleToSelectedCells('textAlign', 'center'); }
+        function alignRight() { applyStyleToSelectedCells('textAlign', 'right'); }
+        
+        function changeFontSize() {
+            if (!isAdminMode || selectedCells.length === 0) return;
+            applyStyleToSelectedCells('fontSize', document.getElementById('fontSizeInput').value + 'px');
+        }
+        function changeBgColor() {
+            if (!isAdminMode || selectedCells.length === 0) return;
+            applyStyleToSelectedCells('backgroundColor', document.getElementById('bgColorPicker').value);
+        }
+        function changeTextColor() {
+            if (!isAdminMode || selectedCells.length === 0) return;
+            applyStyleToSelectedCells('color', document.getElementById('textColorPicker').value);
+        }
+        
+        function mergeCells() {
+            if (!isAdminMode || selectedCells.length < 2) {
+                showStatus('Zaznacz co najmniej 2 komórki (prostokątny obszar) do połączenia!', 'error');
+                return;
+            }
+            const rows = selectedCells.map(cell => parseInt(cell.dataset.row));
+            const cols = selectedCells.map(cell => parseInt(cell.dataset.col));
+            const minRow = Math.min(...rows), maxRow = Math.max(...rows);
+            const minCol = Math.min(...cols), maxCol = Math.max(...cols);
+            
+            let isRectangle = true;
+            const selectedCoords = new Set(selectedCells.map(c => `${c.dataset.row},${c.dataset.col}`));
+            if (selectedCells.length !== (maxRow - minRow + 1) * (maxCol - minCol + 1)) isRectangle = false;
+            else {
+                for (let r = minRow; r <= maxRow; r++) {
+                    for (let c = minCol; c <= maxCol; c++) if (!selectedCoords.has(`${r},${c}`)) { isRectangle = false; break; }
+                    if (!isRectangle) break;
+                }
+            }
+            if (!isRectangle) {
+                showStatus('Zaznaczenie do scalenia musi być prostokątne i ciągłe!', 'error'); return;
+            }
+
+            const mainCell = document.querySelector(`td.cell[data-row="${minRow}"][data-col="${minCol}"]`);
+            if (!mainCell) { showStatus('Nie znaleziono głównej komórki.', 'error'); return; }
+            
+            let mergedText = mainCell.textContent.trim();
+            selectedCells.forEach(cell => {
+                if (cell !== mainCell && cell.textContent.trim()) mergedText += (mergedText ? " " : "") + cell.textContent.trim();
+            });
+
+            mainCell.setAttribute('colspan', maxCol - minCol + 1);
+            mainCell.setAttribute('rowspan', maxRow - minRow + 1);
+            mainCell.textContent = mergedText;
+            
+            const currentData = serializeTableDataToString(); // Serialize before re-init
+            initSpreadsheet(currentData);
+            showStatus('Komórki połączone.', 'success');
+            if (isAdminMode) updateSerializedDataOutput();
+        }
+        
+        function unmergeCells() {
+            if (!isAdminMode || selectedCells.length === 0) { showStatus('Zaznacz komórkę do rozłączenia.', 'error'); return; }
+            let refreshNeeded = false;
+            selectedCells.forEach(cell => {
+                if (cell.hasAttribute('colspan') || cell.hasAttribute('rowspan')) {
+                    cell.removeAttribute('colspan');
+                    cell.removeAttribute('rowspan');
+                    cell.classList.remove('merged');
+                    refreshNeeded = true;
+                }
+            });
+            if (refreshNeeded) {
+                const currentData = serializeTableDataToString();
+                initSpreadsheet(currentData);
+                showStatus('Komórki rozłączone.', 'success');
+                if (isAdminMode) updateSerializedDataOutput();
+            } else showStatus('Zaznaczona komórka nie jest scalona.', 'info');
+        }
+        
+        function addRow() {
+            if (!isAdminMode) return;
+            const tbody = document.getElementById('spreadsheetBody');
+            const numRows = tbody.children.length;
+            const numCols = document.querySelector('#spreadsheet thead tr').children.length - 1;
+            const newRow = document.createElement('tr');
+            const rowHeader = document.createElement('td');
+            rowHeader.className = 'row-header';
+            rowHeader.textContent = numRows + 1;
+            newRow.appendChild(rowHeader);
+            for (let j = 0; j < numCols; j++) {
+                const cell = document.createElement('td');
+                cell.className = 'cell';
+                cell.dataset.row = numRows; cell.dataset.col = j;
+                cell.addEventListener('click', handleCellClick);
+                cell.addEventListener('dblclick', handleCellDblClick);
+                cell.addEventListener('mousedown', handleCellMouseDown);
+                cell.addEventListener('mouseover', handleCellMouseOver);
+                newRow.appendChild(cell);
+            }
+            tbody.appendChild(newRow);
+            if (isAdminMode) updateSerializedDataOutput();
+        }
+
+        function addColumn() {
+            if (!isAdminMode) return;
+            const headerRow = document.querySelector('#spreadsheet thead tr');
+            const numCols = headerRow.children.length - 1;
+            const newColHeader = document.createElement('th');
+            newColHeader.className = 'col-header';
+            newColHeader.textContent = String.fromCharCode(65 + numCols);
+            headerRow.appendChild(newColHeader);
+            Array.from(document.getElementById('spreadsheetBody').children).forEach((row, rowIndex) => {
+                const cell = document.createElement('td');
+                cell.className = 'cell';
+                cell.dataset.row = rowIndex; cell.dataset.col = numCols;
+                cell.addEventListener('click', handleCellClick);
+                cell.addEventListener('dblclick', handleCellDblClick);
+                cell.addEventListener('mousedown', handleCellMouseDown);
+                cell.addEventListener('mouseover', handleCellMouseOver);
+                row.appendChild(cell);
+            });
+            if (isAdminMode) updateSerializedDataOutput();
+        }
+
+        function deleteRow() {
+            if (!isAdminMode || !selectedCell) { showStatus('Zaznacz komórkę w wierszu do usunięcia.', 'error'); return; }
+            const rowElement = selectedCell.closest('tr');
+            const tbody = document.getElementById('spreadsheetBody');
+            if (rowElement && tbody.children.length > 1) {
+                rowElement.remove();
+                Array.from(tbody.children).forEach((row, index) => {
+                    row.querySelector('.row-header').textContent = index + 1;
+                    Array.from(row.querySelectorAll('.cell')).forEach(cell => cell.dataset.row = index);
+                });
+                selectedCell = null; selectedCells = [];
+                if (isAdminMode) updateSerializedDataOutput();
+            } else if (tbody.children.length <= 1) showStatus('Nie można usunąć ostatniego wiersza.', 'error');
+        }
+
+        function deleteColumn() {
+            if (!isAdminMode || !selectedCell) { showStatus('Zaznacz komórkę w kolumnie.', 'error'); return; }
+            const colIndex = parseInt(selectedCell.dataset.col);
+            const headerRow = document.querySelector('#spreadsheet thead tr');
+            if (headerRow.children.length - 1 <= 1) { showStatus('Nie można usunąć ostatniej kolumny.', 'error'); return; }
+
+            if (headerRow.children[colIndex + 1]) headerRow.children[colIndex + 1].remove();
+            Array.from(document.getElementById('spreadsheetBody').children).forEach(row => {
+                if (row.children[colIndex + 1]) row.children[colIndex + 1].remove();
+            });
+            Array.from(headerRow.children).forEach((th, index) => {
+                if (index > 0) th.textContent = String.fromCharCode(65 + index - 1);
+            });
+            // Re-index data-col for remaining cells (this is important)
+            Array.from(document.querySelectorAll('#spreadsheetBody tr')).forEach(row => {
+                Array.from(row.querySelectorAll('.cell')).forEach((cell, newColIndex) => {
+                    cell.dataset.col = newColIndex;
+                });
+            });
+            selectedCell = null; selectedCells = [];
+            if (isAdminMode) updateSerializedDataOutput();
+        }
+        
+        document.addEventListener('keydown', (e) => {
+            if (!isAdminMode || document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+            if (e.key === 'Delete' && selectedCells.length > 0) {
+                e.preventDefault();
+                selectedCells.forEach(cell => { if(!cell.classList.contains('editing')) cell.textContent = ''; });
+                if (isAdminMode) updateSerializedDataOutput();
+            }
+        });
+
+        function rgbToHex(rgb) {
+            if (!rgb || !rgb.startsWith('rgb')) return rgb;
+            const result = /^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/.exec(rgb);
+            if (!result) return rgb;
+            return `#${parseInt(result[1]).toString(16).padStart(2, '0')}${parseInt(result[2]).toString(16).padStart(2, '0')}${parseInt(result[3]).toString(16).padStart(2, '0')}`;
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            initSpreadsheet();
+            document.getElementById('fontSizeInput').addEventListener('change', changeFontSize);
+            document.getElementById('bgColorPicker').addEventListener('input', changeBgColor);
+            document.getElementById('textColorPicker').addEventListener('input', changeTextColor);
+        });
+    </script>
+</body>
+</html>
