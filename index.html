@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="en"> <!-- You might want to change this to lang="en" if the primary language of the page is now English -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>links</title>
-    <link rel="stylesheet" href="style.css"> <!-- Zakładam, że ten plik zawiera Twoje główne style -->
+    <title>links - Kam3l</title>
+    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -13,43 +13,68 @@
     <meta name="apple-mobile-web-app-title" content="MyWebSite" />
     <link rel="manifest" href="/site.webmanifest" />
     <style>
-        /* Dodatkowe style dla przycisku Pickems */
+        /* Pickems button styles */
         .pickems-button-container {
-            text-align: center; /* Wyśrodkowanie przycisku */
-            margin-top: 25px;   /* Odstęp od ikon społecznościowych */
-            margin-bottom: 20px;/* Odstęp od dołu, jeśli jest coś niżej */
+            text-align: center;
+            margin-top: 25px;
+            margin-bottom: 20px;
         }
 
         .pickems-btn {
             display: inline-block;
             padding: 12px 30px;
-            background-color: #2d2d2d; /* Ciemniejszy szaro-czarny kolor tła */
-            color: #e0e0e0;       /* Jasnoszary kolor tekstu dla kontrastu */
+            background-color: #2d2d2d;
+            color: #e0e0e0;
             text-decoration: none;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             font-size: 16px;
             font-weight: 600;
             border-radius: 8px;
-            border: 1px solid #1a1a1a; /* Ciemniejsza ramka, prawie czarna */
+            border: 1px solid #1a1a1a;
             transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out, box-shadow 0.2s ease-in-out;
             cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); /* Cień nieco bardziej widoczny na ciemnym tle */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
         }
 
         .pickems-btn:hover,
         .pickems-btn:focus {
-            background-color: #3f3f3f; /* Lekko jaśniejszy szary po najechaniu */
+            background-color: #3f3f3f;
             color: #ffffff;
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
         }
 
         .pickems-btn:active {
-            background-color: #1c1c1c; /* Bardzo ciemny szary/prawie czarny przy kliknięciu */
+            background-color: #1c1c1c;
             transform: translateY(0px);
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
         }
+
+        /* Styles for Turnstile and protected content */
+        #turnstile-container {
+            margin-top: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        #protected-content {
+            display: none; /* Hide content by default */
+        }
+
+        body {
+            /* Assuming styles are in style.css */
+        }
+        .container {
+            text-align: center; /* Simple centering for block elements inside */
+        }
+
     </style>
+    <!-- 1. Add Cloudflare Turnstile script -->
+    <script
+        src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onloadTurnstileCallback"
+        defer
+    ></script>
 </head>
 <body>
     <div class="container">
@@ -59,30 +84,88 @@
                 <img src="emoji.png" alt="Rotating emoji" id="rotatingImage">
             </div>
         </div>
-        <div class="social-icons">
-            <a href="https://steamcommunity.com/profiles/76561199050578760" target="_blank" class="icon-link">
-                <i class="fab fa-steam"></i>
-            </a>
-            <a href="https://x.com/Kam3l__" target="_blank" class="icon-link">
-                <i class="fab fa-twitter"></i>
-            </a>
-            <a href="specs.html" class="icon-link">
-                <i class="fas fa-desktop"></i>
-            </a>
+
+        <!-- 2. Add placeholder for the Turnstile widget -->
+        <div id="turnstile-container">
+            <!-- Widget will be rendered here by JavaScript -->
         </div>
 
-        <!-- Nowy przycisk Pickems -->
-        <div class="pickems-button-container">
-            <a href="http://www.kam3l.xyz/cs-pickems.html" class="pickems-btn">
-                Pickems
-            </a>
-        </div>
+        <!-- 3. Container for protected content -->
+        <div id="protected-content">
+            <div class="social-icons">
+                <a href="https://steamcommunity.com/profiles/76561199050578760" target="_blank" class="icon-link">
+                    <i class="fab fa-steam"></i>
+                </a>
+                <a href="https://x.com/Kam3l__" target="_blank" class="icon-link">
+                    <i class="fab fa-twitter"></i>
+                </a>
+                <a href="specs.html" class="icon-link">
+                    <i class="fas fa-desktop"></i>
+                </a>
+            </div>
+
+            <!-- New Pickems button -->
+            <div class="pickems-button-container">
+                <a href="http://www.kam3l.xyz/cs-pickems.html" class="pickems-btn">
+                    Pickems
+                </a>
+            </div>
+        </div> <!-- End of #protected-content -->
 
     </div>
-    <script src="script.js"></script> <!-- Zakładam, że ten plik istnieje i jest potrzebny -->
-    <script
-  src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onloadTurnstileCallback"
-  defer
-></script>
+    <script src="script.js"></script> <!-- Assuming this file exists and is needed -->
+
+    <!-- 4. JavaScript for Turnstile handling -->
+    <script>
+        function onTurnstileSuccess(token) {
+            console.log("Turnstile verification successful! Token:", token);
+            document.getElementById('protected-content').style.display = 'block'; // Show protected content
+            // You can also hide the Turnstile container if you wish
+            // document.getElementById('turnstile-container').style.display = 'none';
+
+            // IMPORTANT: In a production environment, the token should be verified server-side.
+            // For this static page, we are unlocking content directly.
+        }
+
+        function onTurnstileError(errorCode) {
+            console.error("An error occurred during Turnstile verification. Error code:", errorCode);
+            // You can inform the user, e.g.:
+            // alert("Failed to verify captcha. Please try refreshing the page.");
+            // Or display a message in #turnstile-container
+            const turnstileContainer = document.getElementById('turnstile-container');
+            if (turnstileContainer) {
+                turnstileContainer.innerHTML = '<p style="color: red;">Verification error. Please try refreshing the page.</p>';
+            }
+        }
+
+        function onTurnstileExpired() {
+            console.warn("Turnstile token has expired. The widget should attempt to refresh.");
+            // You might want to reset the UI, e.g., hide the protected content again
+            document.getElementById('protected-content').style.display = 'none';
+            // The Turnstile widget usually tries to refresh automatically.
+            // If not, you might need logic to re-render or show the container.
+            // document.getElementById('turnstile-container').style.display = 'flex'; // Show again if it was hidden
+            // turnstile.reset(); // You can try to reset the widget if needed
+        }
+
+        function onloadTurnstileCallback() {
+            const turnstileContainer = document.getElementById('turnstile-container');
+            if (typeof turnstile !== 'undefined' && turnstileContainer) {
+                turnstile.render(turnstileContainer, { // Pass the DOM element, not a selector string
+                    sitekey: '0x4AAAAAABeaX6IJ3KUXhOq1', // <-- IMPORTANT: Replace with your actual public site key!
+                    callback: onTurnstileSuccess,
+                    'error-callback': onTurnstileError,
+                    'expired-callback': onTurnstileExpired,
+                    theme: 'dark', // Or 'light', 'auto' - adjust to your site's appearance
+                    // language: 'en' // You can try setting the language if supported and desired
+                });
+            } else {
+                console.error('Turnstile API not loaded or container element not found.');
+                if (turnstileContainer) {
+                     turnstileContainer.innerHTML = '<p style="color: orange;">Could not load verification module. Please try refreshing the page.</p>';
+                }
+            }
+        }
+    </script>
 </body>
 </html>
