@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>links</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css"> <!-- Zakładam, że ten plik zawiera Twoje główne style -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -12,6 +12,44 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-title" content="MyWebSite" />
     <link rel="manifest" href="/site.webmanifest" />
+    <style>
+        /* Dodatkowe style dla przycisku Pickems */
+        .pickems-button-container {
+            text-align: center; /* Wyśrodkowanie przycisku */
+            margin-top: 25px;   /* Odstęp od ikon społecznościowych */
+            margin-bottom: 20px;/* Odstęp od dołu, jeśli jest coś niżej */
+        }
+
+        .pickems-btn {
+            display: inline-block; /* Umożliwia ustawienie paddingu i zachowuje się jak blok */
+            padding: 12px 30px;   /* Wewnętrzne odstępy przycisku */
+            background-color: #2c3e50; /* Ciemny, elegancki kolor tła (np. ciemny niebiesko-szary) */
+            color: #ecf0f1;       /* Jasny kolor tekstu dla kontrastu */
+            text-decoration: none;   /* Usunięcie domyślnego podkreślenia linku */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Czytelna, nowoczesna czcionka */
+            font-size: 16px;         /* Rozmiar tekstu */
+            font-weight: 600;        /* Lekko pogrubiony tekst */
+            border-radius: 8px;      /* Zaokrąglone rogi */
+            border: 1px solid #34495e; /* Subtelna ramka, nieco jaśniejsza/ciemniejsza od tła */
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out, box-shadow 0.2s ease-in-out;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Dyskretny cień dla efektu głębi */
+        }
+
+        .pickems-btn:hover,
+        .pickems-btn:focus { /* :focus dla lepszej dostępności (np. nawigacja klawiaturą) */
+            background-color: #34495e; /* Ciemniejszy/inny odcień tła po najechaniu */
+            color: #ffffff;           /* Można zmienić kolor tekstu na jeszcze jaśniejszy */
+            transform: translateY(-2px); /* Efekt lekkiego uniesienia przycisku */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Wyraźniejszy cień po najechaniu */
+        }
+
+        .pickems-btn:active {
+            background-color: #233140; /* Jeszcze ciemniejszy odcień przy aktywnym kliknięciu */
+            transform: translateY(0px);   /* Przycisk wraca do pozycji wyjściowej (lub lekko w dół) */
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); /* Mniejszy cień przy kliknięciu */
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -31,11 +69,21 @@
             <a href="specs.html" class="icon-link">
                 <i class="fas fa-desktop"></i>
             </a>
+            <!-- Usunięta ikona celownika i link do lokalnego cs-pickems.html:
             <a href="cs-pickems.html" class="icon-link">
                 <i class="fas fa-crosshairs"></i>
             </a>
+            -->
         </div>
+
+        <!-- Nowy przycisk Pickems -->
+        <div class="pickems-button-container">
+            <a href="http://www.kam3l.xyz/cs-pickems.html" target="_blank" rel="noopener noreferrer" class="pickems-btn">
+                Pickems
+            </a>
+        </div>
+
     </div>
-    <script src="script.js"></script>
+    <script src="script.js"></script> <!-- Zakładam, że ten plik istnieje i jest potrzebny -->
 </body>
 </html>
