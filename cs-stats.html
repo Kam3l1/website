@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CS Major - Kam3l</title>
+    <title>CS Stats - Kam3l</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
@@ -48,14 +48,23 @@
         .spreadsheet-container {
             background: #1a1a1a;
             border-radius: 10px;
-            padding: 0;
+            padding: 0; /* Keep padding 0 if scroll wrapper handles inner content */
             box-shadow: 0 0 20px rgba(0, 255, 119, 0.1);
-            overflow: hidden;
+            overflow: hidden; /* Important for border-radius clipping */
             border: 2px solid #333;
         }
 
+        /* --- ADDED --- */
+        .table-scroll-wrapper {
+            overflow-x: auto; /* Enable horizontal scrolling */
+            position: relative; /* For absolute positioning of range-selector */
+            /* max-width: 100%; Ensure it doesn't overflow spreadsheet-container if it has padding */
+        }
+        /* --- END ADDED --- */
+
         .spreadsheet {
-            width: 100%;
+            /* width: 100%; */ /* MODIFIED: Removed, width will be determined by content */
+            min-width: 100%; /* ADDED: Ensures table tries to fill scroll wrapper, but can expand */
             border-collapse: separate;
             border-spacing: 0;
             background: #2a2a2a;
@@ -74,6 +83,9 @@
             padding: 4px;
             color: #ccc;
             user-select: none;
+            position: sticky; /* Optional: make row headers sticky */
+            left: 0; /* Required for sticky */
+            z-index: 2; /* To appear above cells during scroll */
         }
 
         .col-header {
@@ -85,7 +97,20 @@
             color: #ccc;
             user-select: none;
             min-width: 80px;
+            position: sticky; /* Optional: make column headers sticky */
+            top: 0; /* Required for sticky */
+            z-index: 3; /* To appear above row headers and cells */
         }
+        
+        /* Ensure first th (empty for row numbers) is also sticky if col-headers are sticky */
+        #spreadsheet thead tr th:first-child {
+            position: sticky;
+            top: 0;
+            left: 0;
+            z-index: 4; /* Highest z-index for the corner */
+            background: #3a3a3a; /* Match col-header background */
+        }
+
 
         .cell {
             border: 1px solid #555;
@@ -96,9 +121,6 @@
             height: 20px;
             position: relative;
             cursor: cell;
-            /* Default text-align is often 'start' or 'left' based on LTR/RTL.
-               Explicitly setting it might be useful if consistent alignment is always desired.
-               However, for serialization, we'll check if it's explicitly set. */
         }
 
         .cell:hover {
@@ -114,14 +136,6 @@
         .cell.editing {
             padding: 0;
         }
-
-        .cell.merged {
-            /* Style for merged cells, if specific visual distinction is needed beyond colspan/rowspan effects */
-            /* background: #3a4a3a !important; */ /* Example, can be removed if not desired */
-            /* border: 2px solid #00ff77 !important; */
-        }
-
-        /* .cell.hidden is no longer used for rendering merged cells; colspan/rowspan handles it */
 
         .cell-input {
             width: 100%;
@@ -169,6 +183,7 @@
             z-index: 1001;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
             min-width: 400px;
+            max-width: 90vw; /* Ensure panel is not too wide on small screens */
         }
 
         .admin-overlay {
@@ -189,7 +204,8 @@
             color: white;
             border-radius: 4px;
             margin-right: 10px;
-            width: 200px;
+            width: calc(100% - 125px); /* Adjust width based on button */
+            max-width: 200px;
         }
 
         .confirm-btn {
@@ -220,6 +236,7 @@
             border-bottom: 1px solid #555;
             gap: 10px;
             flex-wrap: wrap;
+            /* MODIFIED: Toolbar is outside scroll wrapper, so it won't scroll */
         }
 
         .toolbar.visible {
@@ -245,20 +262,9 @@
             color: white;
         }
 
-        .tool-btn.merge {
-            background: #00ff77;
-            color: #000;
-        }
-
-        .tool-btn.unmerge {
-            background: #ff4757;
-            color: white;
-        }
-
-        .tool-btn.copy { /* Renamed to "Kopiuj Dane" */
-            background: #ff9500;
-            color: white;
-        }
+        .tool-btn.merge { background: #00ff77; color: #000; }
+        .tool-btn.unmerge { background: #ff4757; color: white; }
+        .tool-btn.copy { background: #ff9500; color: white; }
 
         .color-picker {
             width: 30px;
@@ -279,11 +285,12 @@
         }
 
         .range-selector {
-            position: absolute;
+            position: absolute; /* Positioned relative to table-scroll-wrapper */
             border: 2px dashed #4285f4;
             background: rgba(66, 133, 244, 0.1);
             pointer-events: none;
             display: none;
+            z-index: 1; /* Above cells but below headers if they are sticky */
         }
 
         .status {
@@ -298,19 +305,13 @@
             z-index: 1000;
         }
 
-        .status.success {
-            background: #00ff77;
-            color: #000;
-        }
+        .status.success { background: #00ff77; color: #000; }
+        .status.error { background: #ff4757; color: white; }
 
-        .status.error {
-            background: #ff4757;
-            color: white;
-        }
-
-        .copy-textarea { /* Used for tableDataOutput */
+        .copy-textarea {
             width: 100%;
-            min-height: 200px;
+            min-height: 150px; /* Reduced height a bit */
+            max-height: 40vh;
             background: #333;
             border: 1px solid #555;
             color: white;
@@ -320,20 +321,45 @@
             border-radius: 4px;
             margin: 10px 0;
             resize: vertical;
-            word-break: break-all; /* Ensure long strings wrap */
+            word-break: break-all;
+            box-sizing: border-box;
         }
 
         @media (max-width: 768px) {
-            .title {
-                font-size: 2rem;
+            body {
+                padding: 10px; /* Less padding on small screens */
             }
-            
+            .title {
+                font-size: 1.8rem; /* Smaller title */
+            }
             .spreadsheet {
                 font-size: 10px;
             }
-            
             .cell, .col-header {
-                min-width: 60px;
+                min-width: 70px; /* Slightly increased min-width for touch friendliness */
+                padding: 3px 6px;
+            }
+            .row-header {
+                min-width: 30px;
+                padding: 3px;
+            }
+            .admin-panel {
+                padding: 15px;
+            }
+            .password-input {
+                width: calc(100% - 115px); /* Adjust for smaller confirm button */
+            }
+             .toolbar {
+                padding: 6px;
+                gap: 5px;
+            }
+            .tool-btn, .font-size-input {
+                padding: 3px 6px;
+                font-size: 11px;
+            }
+            .color-picker {
+                width: 25px;
+                height: 22px;
             }
         }
     </style>
@@ -353,7 +379,7 @@
             <h4 style="color: white; margin: 0 0 10px 0;">Skopiuj dane tabeli</h4>
             <p style="color: #ccc; font-size: 12px; margin-bottom: 10px;">Skopiuj poniższy zakodowany ciąg i wklej go do zmiennej <code>INITIAL_TABLE_DATA</code> w pliku HTML:</p>
             <textarea class="copy-textarea" id="tableDataOutput" readonly></textarea>
-            <button class="confirm-btn" onclick="copyToClipboard()" style="width: 100%;">📋 Skopiuj dane do schowka</button>
+            <button class="confirm-btn" onclick="copyToClipboard()" style="width: 100%; margin-top: 10px;">📋 Skopiuj dane do schowka</button>
         </div>
     </div>
 
@@ -364,7 +390,7 @@
         <h1 class="title">
             <i class="fas fa-crosshairs"></i> Austin Major 2025 Pickems
         </h1>
-        <div></div> <!-- Placeholder for potential right-side header content -->
+        <div></div>
     </div>
 
     <div class="spreadsheet-container">
@@ -372,62 +398,64 @@
             <button class="tool-btn" onclick="formatBold()"><b>B</b></button>
             <button class="tool-btn" onclick="formatItalic()"><i>I</i></button>
             <button class="tool-btn" onclick="formatUnderline()"><u>U</u></button>
-            <span style="margin: 0 10px; color: #666;">|</span>
+            <span style="margin: 0 5px; color: #666;">|</span>
             <button class="tool-btn" onclick="alignLeft()">⬅️</button>
             <button class="tool-btn" onclick="alignCenter()">↔️</button>
             <button class="tool-btn" onclick="alignRight()">➡️</button>
-            <span style="margin: 0 10px; color: #666;">|</span>
+            <span style="margin: 0 5px; color: #666;">|</span>
             <input type="number" class="font-size-input" id="fontSizeInput" value="11" min="8" max="24" title="Rozmiar czcionki" onchange="changeFontSize()">
-            <!-- <button class="tool-btn" onclick="changeFontSize()">A</button> Removed, onchange is enough -->
-            <span style="margin: 0 10px; color: #666;">|</span>
+            <span style="margin: 0 5px; color: #666;">|</span>
             <input type="color" class="color-picker" id="bgColorPicker" value="#2a2a2a" onchange="changeBgColor()" title="Kolor tła kafelka">
             <input type="color" class="color-picker" id="textColorPicker" value="#ffffff" onchange="changeTextColor()" title="Kolor tekstu">
-            <span style="margin: 0 10px; color: #666;">|</span>
+            <span style="margin: 0 5px; color: #666;">|</span>
             <button class="tool-btn merge" onclick="mergeCells()">🔗 Połącz</button>
             <button class="tool-btn unmerge" onclick="unmergeCells()">🔓 Rozłącz</button>
-            <span style="margin: 0 10px; color: #666;">|</span>
+            <span style="margin: 0 5px; color: #666;">|</span>
             <button class="tool-btn" onclick="addRow()">+ Wiersz</button>
             <button class="tool-btn" onclick="addColumn()">+ Kolumna</button>
             <button class="tool-btn" onclick="deleteRow()">- Wiersz</button>
             <button class="tool-btn" onclick="deleteColumn()">- Kolumna</button>
-            <span style="margin: 0 10px; color: #666;">|</span>
+            <span style="margin: 0 5px; color: #666;">|</span>
             <button class="tool-btn copy" onclick="updateSerializedDataOutputAndShowInPanel()">📋 Kopiuj Dane</button>
         </div>
         
-        <table class="spreadsheet" id="spreadsheet">
-            <thead>
-                <tr>
-                    <th class="row-header"></th>
-                    <!-- Column headers A, B, C... will be generated by JS -->
-                </tr>
-            </thead>
-            <tbody id="spreadsheetBody">
-                <!-- Spreadsheet rows and cells will be generated by JS -->
-            </tbody>
-        </table>
-        
-        <div class="range-selector" id="rangeSelector"></div>
+        <!-- --- ADDED WRAPPER --- -->
+        <div class="table-scroll-wrapper" id="tableScrollWrapper">
+            <table class="spreadsheet" id="spreadsheet">
+                <thead>
+                    <tr>
+                        <th class="row-header"></th>
+                        <!-- Column headers A, B, C... will be generated by JS -->
+                    </tr>
+                </thead>
+                <tbody id="spreadsheetBody">
+                    <!-- Spreadsheet rows and cells will be generated by JS -->
+                </tbody>
+            </table>
+            <!-- --- MOVED range-selector INSIDE --- -->
+            <div class="range-selector" id="rangeSelector"></div>
+        </div>
+        <!-- --- END WRAPPER --- -->
     </div>
 
     <button class="admin-btn" onclick="showAdminPanel()">⚙</button>
     <div class="status" id="status">Gotowy</div>
 
     <script>
-        // PLACE TO PASTE THE COPIED TABLE DATA STRING:
         const INITIAL_TABLE_DATA = "eyJyb3dzIjoyMiwiY29scyI6MTEsImNlbGxEYXRhIjp7IjAsMCI6eyJ0ZXh0IjoiUGlja2VtIG1hZGUgYnk6Iiwic3R5bGUiOnsidGV4dEFsaWduIjoiY2VudGVyIiwiYmFja2dyb3VuZENvbG9yIjoicmdiKDI0OCwgOTMsIDE5OSkifX0sIjAsMSI6eyJ0ZXh0IjoiMzowIiwic3R5bGUiOnsidGV4dEFsaWduIjoiY2VudGVyIiwiYmFja2dyb3VuZENvbG9yIjoicmdiKDc1LCAxODIsIDczKSJ9LCJjb2xzcGFuIjoyfSwiMCwzIjp7InRleHQiOiIzOjEgLyAzOjIiLCJzdHlsZSI6eyJ0ZXh0QWxpZ24iOiJjZW50ZXIiLCJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoOTQsIDE4NiwgMTM0KSJ9LCJjb2xzcGFuIjo2fSwiMCw5Ijp7InRleHQiOiIwOjMiLCJzdHlsZSI6eyJ0ZXh0QWxpZ24iOiJjZW50ZXIiLCJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoMjU1LCAwLCAwKSJ9LCJjb2xzcGFuIjoyfSwiMSwwIjp7InRleHQiOiJLYW0zbCIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYigzMywgMzQsIDUzKSJ9fSwiMSwxIjp7InRleHQiOiJIZXJvaWMiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNTgsIDEzMiwgNTcpIn19LCIxLDIiOnsidGV4dCI6IkNvbXBsZXhpdHkiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNTgsIDEzMiwgNTcpIn19LCIxLDMiOnsidGV4dCI6Ik9HIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDcwLCAxMzQsIDk4KSJ9fSwiMSw0Ijp7InRleHQiOiJGbHV4byIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig3MCwgMTM0LCA5OCkifX0sIjEsNSI6eyJ0ZXh0IjoiQmV0Qm9vbSIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig3MCwgMTM0LCA5OCkifX0sIjEsNiI6eyJ0ZXh0IjoiQjgiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNzAsIDEzNCwgOTgpIn19LCIxLDciOnsidGV4dCI6IldpbGRjYXJkIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDcwLCAxMzQsIDk4KSJ9fSwiMSw4Ijp7InRleHQiOiJJbXBlcmlhbCIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig3MCwgMTM0LCA5OCkifX0sIjEsOSI6eyJ0ZXh0IjoiQ2hpbmdnaXMgV2FycmlvcnMiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoOTcsIDAsIDApIn19LCIxLDEwIjp7InRleHQiOiJGbHlRdWVzdCIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig5NywgMCwgMCkifX0sIjIsMCI6eyJ0ZXh0IjoiUGltcCIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYigzMywgMzQsIDUzKSJ9fSwiMywwIjp7InRleHQiOiJIYXdrYSIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYigzMywgMzQsIDUzKSJ9fSwiMywxIjp7InRleHQiOiJIZXJvaWMiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNTgsIDEzMiwgNTcpIn19LCIzLDIiOnsidGV4dCI6IkNvbXBsZXhpdHkiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNTgsIDEzMiwgNTcpIn19LCIzLDMiOnsidGV4dCI6IkxlZ2FjeSIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig2NCwgMTI0LCA5MSkifX0sIjMsNCI6eyJ0ZXh0IjoiTlJHIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDY4LCAxMzEsIDk2KSJ9fSwiMyw1Ijp7InRleHQiOiJCZXRCb29tIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDY4LCAxMzEsIDk2KSJ9fSwiMyw2Ijp7InRleHQiOiJCOCIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig2OCwgMTMxLCA5NikifX0sIjMsNyI6eyJ0ZXh0IjoiV2lsZGNhcmQiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNjgsIDEzMSwgOTYpIn19LCIzLDgiOnsidGV4dCI6IlR5bG9vIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDY4LCAxMzEsIDk2KSJ9fSwiMyw5Ijp7InRleHQiOiJDaGluZ2dpcyBXYXJyaW9ycyIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig5NywgMCwgMCkifX0sIjMsMTAiOnsidGV4dCI6IkZsdXhvIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDk3LCAwLCAwKSJ9fSwiNCwwIjp7InRleHQiOiJGbDBtIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDMzLCAzNCwgNTMpIn19LCI1LDAiOnsidGV4dCI6IkF1c3RpbkNTIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDMzLCAzNCwgNTMpIn19LCI2LDAiOnsidGV4dCI6Ik96em55Iiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDMzLCAzNCwgNTMpIn19LCI2LDEiOnsidGV4dCI6Ikhlcm9pYyIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig1OCwgMTMyLCA1NykifX0sIjYsMiI6eyJ0ZXh0IjoiQ29tcGxleGl0eSIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig1OCwgMTMyLCA1NykifX0sIjYsMyI6eyJ0ZXh0IjoiT0ciLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNjQsIDEyNCwgOTEpIn19LCI2LDQiOnsidGV4dCI6IkZseVF1ZXN0Iiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDY0LCAxMjQsIDkxKSJ9fSwiNiw1Ijp7InRleHQiOiJCZXRCb29tIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDY0LCAxMjQsIDkxKSJ9fSwiNiw2Ijp7InRleHQiOiJCOCIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig2NCwgMTI0LCA5MSkifX0sIjYsNyI6eyJ0ZXh0IjoiV2lsZGNhcmQiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNjQsIDEyNCwgOTEpIn19LCI2LDgiOnsidGV4dCI6IlR5bG9vIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDY0LCAxMjQsIDkxKSJ9fSwiNiw5Ijp7InRleHQiOiJDaGluZ2dpcyBXYXJyaW9ycyIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig5NywgMCwgMCkifX0sIjYsMTAiOnsidGV4dCI6IkZsdXhvIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDk3LCAwLCAwKSJ9fSwiNywwIjp7InRleHQiOiJPaG5lcGl4ZWwgKG5hdXIpIiwic3R5bGUiOnsiZm9udFNpemUiOiIxMHB4IiwiYmFja2dyb3VuZENvbG9yIjoicmdiKDMzLCAzNCwgNTMpIn19LCI4LDAiOnsidGV4dCI6IkFycm93Y3MiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoMzMsIDM0LCA1MykifX0sIjksMCI6eyJ0ZXh0IjoiVHJpbGx1WGUiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoMzMsIDM0LCA1MykifX0sIjksMSI6eyJ0ZXh0IjoiSGVyb2ljIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDU4LCAxMzIsIDU3KSJ9fSwiOSwyIjp7InRleHQiOiJDb21wbGV4aXR5Iiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDU4LCAxMzIsIDU3KSJ9fSwiOSwzIjp7InRleHQiOiJMZWdhY3kiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNjAsIDExNiwgODUpIn19LCI5LDQiOnsidGV4dCI6IkZseVF1ZXN0Iiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDYwLCAxMTYsIDg1KSJ9fSwiOSw1Ijp7InRleHQiOiJCZXRCb29tIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDYwLCAxMTYsIDg1KSJ9fSwiOSw2Ijp7InRleHQiOiJCOCIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig2MCwgMTE2LCA4NSkifX0sIjksNyI6eyJ0ZXh0IjoiV2lsZGNhcmQiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNjAsIDExNiwgODUpIn19LCI5LDgiOnsidGV4dCI6IlR5bG9vIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDYwLCAxMTYsIDg1KSJ9fSwiOSw5Ijp7InRleHQiOiJDaGluZ2dpcyBXYXJyaW9ycyIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig5NywgMCwgMCkifX0sIjksMTAiOnsidGV4dCI6IkZsdXhvIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDk3LCAwLCAwKSJ9fSwiMTAsMCI6eyJ0ZXh0IjoiTmFydE91dEhlcmUiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoMzMsIDM0LCA1MykifX0sIjEwLDEiOnsidGV4dCI6Ikhlcm9pYyIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig1OCwgMTMyLCA1NykifX0sIjEwLDIiOnsidGV4dCI6IkJldEJvb20iLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNTgsIDEzMiwgNTcpIn19LCIxMCwzIjp7InRleHQiOiJMZWdhY3kiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNjAsIDExNiwgODUpIn19LCIxMCw0Ijp7InRleHQiOiJJbXBlcmlhbCIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig2MCwgMTE2LCA4NSkifX0sIjEwLDUiOnsidGV4dCI6IkNvbXBsZXhpdHkiLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNjAsIDExNiwgODUpIn19LCIxMCw2Ijp7InRleHQiOiJCOCIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig2MCwgMTE2LCA4NSkifX0sIjEwLDciOnsidGV4dCI6IldpbGRDYXJkIiwic3R5bGUiOnsiYmFja2dyb3VuZENvbG9yIjoicmdiKDYwLCAxMTYsIDg1KSJ9fSwiMTAsOCI6eyJ0ZXh0IjoiVHlsb28iLCJzdHlsZSI6eyJiYWNrZ3JvdW5kQ29sb3IiOiJyZ2IoNjAsIDExNiwgODUpIn19LCIxMCw5Ijp7InRleHQiOiJDaGluZ2dpcyBXYXJyaW9ycyIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig5NywgMCwgMCkifX0sIjEwLDEwIjp7InRleHQiOiJMeW5uIFZpc2lvbiIsInN0eWxlIjp7ImJhY2tncm91bmRDb2xvciI6InJnYig5NywgMCwgMCkifX19fQ=="; 
 
         let isAdminMode = false;
         let selectedCell = null;
         let selectedCells = [];
         let isSelecting = false;
-        let startCellForSelection = null; // Renamed from startCell to avoid conflict
+        let startCellForSelection = null;
         
-        const ADMIN_PASSWORD_HASH = "ce303098f3cd33f4489a00276812742e876087a8525fafaaa4a2e386ddc7dcf5"; // sha256("kam3l")
+        const ADMIN_PASSWORD_HASH = "ce303098f3cd33f4489a00276812742e876087a8525fafaaa4a2e386ddc7dcf5";
         
         function showStatus(message, type = 'normal') {
             const statusEl = document.getElementById('status');
             statusEl.textContent = message;
-            statusEl.className = 'status'; // Reset classes
+            statusEl.className = 'status';
             if (type === 'success') statusEl.classList.add('success');
             if (type === 'error') statusEl.classList.add('error');
             
@@ -439,36 +467,31 @@
         
         function initSpreadsheet(initialDataString = INITIAL_TABLE_DATA) {
             const tbody = document.getElementById('spreadsheetBody');
-            tbody.innerHTML = ''; // Clear existing content
+            tbody.innerHTML = '';
             const headerRow = document.querySelector('#spreadsheet thead tr');
-            // Clear existing column headers (except the first empty one for row numbers)
             while (headerRow.children.length > 1) {
                 headerRow.removeChild(headerRow.lastChild);
             }
 
             let tableConfig = {
-                rows: 20, // Default rows
-                cols: 8,  // Default columns
-                cellData: {} // Stores { "row,col": { text, style, colspan, rowspan } }
+                rows: 20,
+                cols: 8,
+                cellData: {}
             };
 
             if (initialDataString && initialDataString.trim() !== "") {
                 try {
-                    const decodedData = atob(initialDataString); // Base64 decode
+                    const decodedData = atob(initialDataString);
                     const parsedConfig = JSON.parse(decodedData);
-                    
                     if (parsedConfig && typeof parsedConfig.rows === 'number' && typeof parsedConfig.cols === 'number' && typeof parsedConfig.cellData === 'object') {
                         tableConfig = parsedConfig;
                     } else {
-                        console.warn("Invalid table data format in INITIAL_TABLE_DATA. Using default.");
                         showStatus("Nieprawidłowy format danych tabeli. Używam domyślnych.", "error");
                     }
                 } catch (e) {
-                    console.error("Failed to parse INITIAL_TABLE_DATA:", e);
                     showStatus("Błąd ładowania danych tabeli. Używam domyślnych.", "error");
                 }
             } else {
-                // Use sample data if INITIAL_TABLE_DATA is empty (first run or reset)
                 const sampleData = [
                     ['Streamers', '3:0', '3:2', '3:2', '0:3', '', '', ''],
                     ['Player1', 'Team A', 'Team B', 'Map1', 'Score', '', '', ''],
@@ -484,7 +507,6 @@
                 });
             }
 
-            // Create column headers
             for (let j = 0; j < tableConfig.cols; j++) {
                 const colLetter = String.fromCharCode(65 + j);
                 const newHeader = document.createElement('th');
@@ -493,7 +515,6 @@
                 headerRow.appendChild(newHeader);
             }
 
-            // Create rows and cells based on tableConfig
             const numRows = tableConfig.rows;
             const numCols = tableConfig.cols;
             const coveredCells = Array(numRows).fill(null).map(() => Array(numCols).fill(false));
@@ -507,9 +528,7 @@
                 row.appendChild(rowHeader);
                 
                 for (let j = 0; j < numCols; j++) {
-                    if (coveredCells[i][j]) {
-                        continue; // This cell is covered by a previous cell's rowspan/colspan
-                    }
+                    if (coveredCells[i][j]) continue;
 
                     const cell = document.createElement('td');
                     cell.className = 'cell';
@@ -521,9 +540,7 @@
 
                     if (data) {
                         cell.textContent = data.text || '';
-                        if (data.style) {
-                            Object.assign(cell.style, data.style);
-                        }
+                        if (data.style) Object.assign(cell.style, data.style);
                         
                         const rSpan = data.rowspan || 1;
                         const cSpan = data.colspan || 1;
@@ -531,7 +548,7 @@
                         if (rSpan > 1 || cSpan > 1) {
                             cell.setAttribute('rowspan', rSpan);
                             cell.setAttribute('colspan', cSpan);
-                            cell.classList.add('merged'); // Add merged class for potential specific styling
+                            cell.classList.add('merged');
                             for (let dr = 0; dr < rSpan; dr++) {
                                 for (let dc = 0; dc < cSpan; dc++) {
                                     if (dr === 0 && dc === 0) continue;
@@ -547,7 +564,6 @@
                     cell.addEventListener('dblclick', handleCellDblClick);
                     cell.addEventListener('mousedown', handleCellMouseDown);
                     cell.addEventListener('mouseover', handleCellMouseOver);
-                    
                     row.appendChild(cell);
                 }
                 tbody.appendChild(row);
@@ -557,10 +573,8 @@
         function serializeTableDataToString() {
             const tbody = document.getElementById('spreadsheetBody');
             const headerRow = document.querySelector('#spreadsheet thead tr');
-            
             const rows = tbody.children.length;
-            const cols = headerRow.children.length - 1; // -1 for the row-header's empty th
-
+            const cols = headerRow.children.length - 1;
             const cellData = {};
 
             for (let i = 0; i < rows; i++) {
@@ -568,53 +582,38 @@
                 const cellElements = Array.from(rowElement.children).filter(c => c.classList.contains('cell'));
 
                 for (const cell of cellElements) {
-                    // Skip if cell is 'hidden' (though this class is not primarily used for merged rendering anymore)
-                    // if (cell.classList.contains('hidden')) continue; 
-
                     const r = parseInt(cell.dataset.row);
                     const c = parseInt(cell.dataset.col);
                     const key = `${r},${c}`;
-                    
                     const data = {};
                     if (cell.textContent) data.text = cell.textContent;
 
                     const styles = {};
                     if (cell.style.fontWeight && cell.style.fontWeight !== 'normal') styles.fontWeight = cell.style.fontWeight;
                     if (cell.style.fontStyle && cell.style.fontStyle !== 'normal') styles.fontStyle = cell.style.fontStyle;
-                    if (cell.style.textDecoration && !cell.style.textDecoration.includes('none')) styles.textDecoration = cell.style.textDecoration; // 'none' can be complex
+                    if (cell.style.textDecoration && !cell.style.textDecoration.includes('none')) styles.textDecoration = cell.style.textDecoration;
                     if (cell.style.textAlign && cell.style.textAlign !== 'start' && cell.style.textAlign !== 'left' && cell.style.textAlign !== '') styles.textAlign = cell.style.textAlign;
-                    if (cell.style.fontSize && cell.style.fontSize !== '11px') styles.fontSize = cell.style.fontSize; // Default from .spreadsheet
-                    if (cell.style.backgroundColor && cell.style.backgroundColor !== 'rgb(42, 42, 42)' && cell.style.backgroundColor !== '#2a2a2a') styles.backgroundColor = cell.style.backgroundColor; // Default from .cell
-                    if (cell.style.color && cell.style.color !== 'rgb(255, 255, 255)' && cell.style.color !== 'white') styles.color = cell.style.color; // Default from body
+                    if (cell.style.fontSize && cell.style.fontSize !== '11px') styles.fontSize = cell.style.fontSize;
+                    if (cell.style.backgroundColor && cell.style.backgroundColor !== 'rgb(42, 42, 42)' && cell.style.backgroundColor !== '#2a2a2a') styles.backgroundColor = cell.style.backgroundColor;
+                    if (cell.style.color && cell.style.color !== 'rgb(255, 255, 255)' && cell.style.color !== 'white') styles.color = cell.style.color;
                     
-                    if (Object.keys(styles).length > 0) {
-                        data.style = styles;
-                    }
+                    if (Object.keys(styles).length > 0) data.style = styles;
 
                     const colspan = cell.getAttribute('colspan');
                     const rowspan = cell.getAttribute('rowspan');
-
                     if (colspan && parseInt(colspan) > 1) data.colspan = parseInt(colspan);
                     if (rowspan && parseInt(rowspan) > 1) data.rowspan = parseInt(rowspan);
                     
-                    if (data.text || data.style || data.colspan || data.rowspan) {
-                         cellData[key] = data;
-                    }
+                    if (data.text || data.style || data.colspan || data.rowspan) cellData[key] = data;
                 }
             }
-            
             const tableConfig = { rows, cols, cellData };
-            const jsonString = JSON.stringify(tableConfig);
-            return btoa(jsonString); // Encode to Base64
+            return btoa(JSON.stringify(tableConfig));
         }
         
         function updateSerializedDataOutput() {
             if (!isAdminMode) return;
-            const serializedData = serializeTableDataToString();
-            const outputTextarea = document.getElementById('tableDataOutput');
-            if (outputTextarea) {
-                outputTextarea.value = serializedData;
-            }
+            document.getElementById('tableDataOutput').value = serializeTableDataToString();
         }
 
         function updateSerializedDataOutputAndShowInPanel() {
@@ -623,12 +622,10 @@
                 return;
             }
             updateSerializedDataOutput();
-            showAdminPanel(); // Ensure panel is visible
-            const outputTextarea = document.getElementById('tableDataOutput');
-            if (outputTextarea) outputTextarea.focus();
+            showAdminPanel();
+            document.getElementById('tableDataOutput').focus();
             showStatus('Dane tabeli gotowe do skopiowania w panelu administratora.', 'success');
         }
-
 
         function showAdminPanel() {
             document.getElementById('adminOverlay').style.display = 'block';
@@ -640,9 +637,7 @@
             document.getElementById('adminOverlay').style.display = 'none';
             document.getElementById('adminPanel').style.display = 'none';
             document.getElementById('passwordInput').value = '';
-            if (!isAdminMode) { // Hide copy section if not successfully logged in
-                 document.getElementById('copySection').style.display = 'none';
-            }
+            if (!isAdminMode) document.getElementById('copySection').style.display = 'none';
         }
         
         async function checkPassword() {
@@ -650,21 +645,19 @@
             const encoder = new TextEncoder();
             const data = encoder.encode(password);
             const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
             
             if (hashHex === ADMIN_PASSWORD_HASH) {
                 isAdminMode = true;
                 document.getElementById('toolbar').classList.add('visible');
                 document.getElementById('copySection').style.display = 'block';
-                updateSerializedDataOutput(); // Populate textarea with current table data
+                updateSerializedDataOutput();
                 showStatus('Tryb administratora aktywowany!', 'success');
-                // No need to close panel immediately, user might want to copy
             } else {
-                isAdminMode = false; // Explicitly set on failure
+                isAdminMode = false;
                 document.getElementById('toolbar').classList.remove('visible');
                 showStatus('Nieprawidłowe hasło!', 'error');
-                document.getElementById('passwordInput').value = ''; // Clear password field
+                document.getElementById('passwordInput').value = '';
                 document.getElementById('copySection').style.display = 'none';
             }
         }
@@ -672,47 +665,30 @@
         function copyToClipboard() {
             const textarea = document.getElementById('tableDataOutput');
             textarea.select();
-            // textarea.setSelectionRange(0, textarea.value.length); // For broader compatibility
-
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(textarea.value).then(() => {
                     showStatus('Dane tabeli skopiowane do schowka!', 'success');
                 }).catch(err => {
-                    console.error('Async clipboard copy failed:', err);
-                    // Fallback to execCommand
-                    try {
-                        document.execCommand('copy');
-                        showStatus('Dane tabeli skopiowane (fallback)!', 'success');
-                    } catch (e) {
-                        showStatus('Błąd podczas kopiowania: ' + e.message, 'error');
-                    }
+                    try { document.execCommand('copy'); showStatus('Dane tabeli skopiowane (fallback)!', 'success'); }
+                    catch (e) { showStatus('Błąd podczas kopiowania: ' + e.message, 'error'); }
                 });
-            } else { // Fallback for older browsers
-                try {
-                    document.execCommand('copy');
-                    showStatus('Dane tabeli skopiowane (fallback)!', 'success');
-                } catch (err) {
-                    showStatus('Błąd podczas kopiowania', 'error');
-                }
+            } else {
+                try { document.execCommand('copy'); showStatus('Dane tabeli skopiowane (fallback)!', 'success'); }
+                catch (err) { showStatus('Błąd podczas kopiowania', 'error'); }
             }
         }
         
-        // Event handling for cells (click, dblclick, mousedown, mouseover)
-        // These functions are attached directly to cells in initSpreadsheet
         function handleCellClick(e) {
             const targetCell = e.target.closest('.cell');
             if (!targetCell) return;
 
-            if (selectedCell) {
-                selectedCell.classList.remove('selected');
-            }
+            if (selectedCell) selectedCell.classList.remove('selected');
             selectedCell = targetCell;
             selectedCell.classList.add('selected');
             
             selectedCells.forEach(cell => cell.classList.remove('selected'));
             selectedCells = [selectedCell];
 
-            // Update color pickers and font size to reflect selected cell's style
             if (isAdminMode) {
                 document.getElementById('fontSizeInput').value = parseInt(selectedCell.style.fontSize) || 11;
                 document.getElementById('bgColorPicker').value = rgbToHex(selectedCell.style.backgroundColor) || '#2a2a2a';
@@ -733,45 +709,39 @@
             input.focus();
             input.select();
             
-            input.addEventListener('blur', () => finishEdit(cell, input, currentText), { once: true });
+            input.addEventListener('blur', () => finishEdit(cell, input), { once: true }); // Removed currentText from here
             input.addEventListener('keydown', (ev) => {
-                if (ev.key === 'Enter') {
-                    input.blur(); // This will trigger the blur event listener
-                } else if (ev.key === 'Escape') {
-                    cell.textContent = currentText; // Restore original text
-                    cell.classList.remove('editing');
-                    cell.innerHTML = currentText; // Remove input
+                if (ev.key === 'Enter') input.blur();
+                else if (ev.key === 'Escape') {
+                    // Check if cell still exists before manipulating
+                    if(cell && cell.classList.contains('editing')) {
+                        cell.textContent = currentText;
+                        cell.classList.remove('editing');
+                        // cell.innerHTML = currentText; // Not needed, textContent is enough
+                    }
                 }
             });
         }
         
-        function finishEdit(cell, input, originalText) {
-            // Check if cell still exists and is in editing mode (it might have been removed by blur+escape)
+        function finishEdit(cell, input) { // Removed originalText parameter
             if (!cell || !cell.classList.contains('editing')) return;
-
             cell.textContent = input.value;
             cell.classList.remove('editing');
-            if (isAdminMode) {
-                updateSerializedDataOutput();
-            }
+            if (isAdminMode) updateSerializedDataOutput();
         }
         
         function handleCellMouseDown(e) {
             const targetCell = e.target.closest('.cell');
             if (!isAdminMode || !targetCell) return;
             
-            // If clicking on an already selected cell, don't restart selection unless Shift/Ctrl is held (not implemented here)
-            // For simplicity, always restart selection process on mousedown on a cell.
             isSelecting = true;
             startCellForSelection = targetCell;
             
-            // Clear previous multi-selection, select only the clicked cell initially
             selectedCells.forEach(sc => sc.classList.remove('selected'));
-            selectedCell = targetCell; // Keep track of the primary selected cell
+            selectedCell = targetCell;
             selectedCell.classList.add('selected');
             selectedCells = [selectedCell];
-
-            document.getElementById('rangeSelector').style.display = 'none'; // Hide old selector
+            document.getElementById('rangeSelector').style.display = 'none';
         }
         
         function handleCellMouseOver(e) {
@@ -793,22 +763,28 @@
             const maxCol = Math.max(startCol, endCol);
             
             const rangeSelector = document.getElementById('rangeSelector');
-            const firstCellRect = document.querySelector(`[data-row="${minRow}"][data-col="${minCol}"]`).getBoundingClientRect();
-            const lastCellRect = document.querySelector(`[data-row="${maxRow}"][data-col="${maxCol}"]`).getBoundingClientRect();
-            const spreadsheetRect = document.getElementById('spreadsheet').getBoundingClientRect();
+            const firstCellElem = document.querySelector(`td.cell[data-row="${minRow}"][data-col="${minCol}"]`);
+            const lastCellElem = document.querySelector(`td.cell[data-row="${maxRow}"][data-col="${maxCol}"]`);
 
-            rangeSelector.style.left = (firstCellRect.left - spreadsheetRect.left) + 'px';
-            rangeSelector.style.top = (firstCellRect.top - spreadsheetRect.top) + 'px';
+            if (!firstCellElem || !lastCellElem) return;
+
+            const firstCellRect = firstCellElem.getBoundingClientRect();
+            const lastCellRect = lastCellElem.getBoundingClientRect();
+            
+            // --- MODIFIED for scroll wrapper ---
+            const scrollWrapper = document.getElementById('tableScrollWrapper');
+            const scrollWrapperRect = scrollWrapper.getBoundingClientRect();
+
+            rangeSelector.style.left = (firstCellRect.left - scrollWrapperRect.left + scrollWrapper.scrollLeft) + 'px';
+            rangeSelector.style.top = (firstCellRect.top - scrollWrapperRect.top + scrollWrapper.scrollTop) + 'px';
             rangeSelector.style.width = (lastCellRect.right - firstCellRect.left) + 'px';
             rangeSelector.style.height = (lastCellRect.bottom - firstCellRect.top) + 'px';
+            // --- END MODIFICATION ---
             rangeSelector.style.display = 'block';
 
             for (let r = minRow; r <= maxRow; r++) {
                 for (let c = minCol; c <= maxCol; c++) {
                     const cell = document.querySelector(`td.cell[data-row="${r}"][data-col="${c}"]`);
-                    // Select only if the cell is not part of a merge (i.e., it's a "main" cell)
-                    // or if it's not hidden. This logic might need refinement for complex merges.
-                    // For now, select all cells in the geometric range.
                     if (cell) { 
                         cell.classList.add('selected');
                         selectedCells.push(cell);
@@ -821,14 +797,10 @@
             if (isSelecting) {
                 isSelecting = false;
                 document.getElementById('rangeSelector').style.display = 'none';
-                // selectedCells array is now populated with the final selection
-                if (selectedCells.length > 0) {
-                     selectedCell = selectedCells[0]; // Primary selected is the first one
-                }
+                if (selectedCells.length > 0) selectedCell = selectedCells[0];
             }
         });
         
-        // Formatting functions
         function applyStyleToSelectedCells(styleProperty, value, toggleValue = null) {
             if (!isAdminMode || selectedCells.length === 0) return;
             selectedCells.forEach(cell => {
@@ -850,20 +822,15 @@
         
         function changeFontSize() {
             if (!isAdminMode || selectedCells.length === 0) return;
-            const fontSize = document.getElementById('fontSizeInput').value;
-            applyStyleToSelectedCells('fontSize', fontSize + 'px');
+            applyStyleToSelectedCells('fontSize', document.getElementById('fontSizeInput').value + 'px');
         }
-        
         function changeBgColor() {
             if (!isAdminMode || selectedCells.length === 0) return;
-            const color = document.getElementById('bgColorPicker').value;
-            applyStyleToSelectedCells('backgroundColor', color);
+            applyStyleToSelectedCells('backgroundColor', document.getElementById('bgColorPicker').value);
         }
-        
         function changeTextColor() {
             if (!isAdminMode || selectedCells.length === 0) return;
-            const color = document.getElementById('textColorPicker').value;
-            applyStyleToSelectedCells('color', color);
+            applyStyleToSelectedCells('color', document.getElementById('textColorPicker').value);
         }
         
         function mergeCells() {
@@ -871,71 +838,44 @@
                 showStatus('Zaznacz co najmniej 2 komórki (prostokątny obszar) do połączenia!', 'error');
                 return;
             }
-            
             const rows = selectedCells.map(cell => parseInt(cell.dataset.row));
             const cols = selectedCells.map(cell => parseInt(cell.dataset.col));
-            const minRow = Math.min(...rows);
-            const minCol = Math.min(...cols);
-            const maxRow = Math.max(...rows);
-            const maxCol = Math.max(...cols);
+            const minRow = Math.min(...rows), maxRow = Math.max(...rows);
+            const minCol = Math.min(...cols), maxCol = Math.max(...cols);
             
-            // Check if selection forms a rectangle
             let isRectangle = true;
             const selectedCoords = new Set(selectedCells.map(c => `${c.dataset.row},${c.dataset.col}`));
-            if (selectedCells.length !== (maxRow - minRow + 1) * (maxCol - minCol + 1)) {
-                isRectangle = false;
-            } else {
+            if (selectedCells.length !== (maxRow - minRow + 1) * (maxCol - minCol + 1)) isRectangle = false;
+            else {
                 for (let r = minRow; r <= maxRow; r++) {
-                    for (let c = minCol; c <= maxCol; c++) {
-                        if (!selectedCoords.has(`${r},${c}`)) {
-                            isRectangle = false; break;
-                        }
-                    }
+                    for (let c = minCol; c <= maxCol; c++) if (!selectedCoords.has(`${r},${c}`)) { isRectangle = false; break; }
                     if (!isRectangle) break;
                 }
             }
-
             if (!isRectangle) {
-                showStatus('Zaznaczenie do scalenia musi być prostokątne i ciągłe!', 'error');
-                return;
+                showStatus('Zaznaczenie do scalenia musi być prostokątne i ciągłe!', 'error'); return;
             }
 
             const mainCell = document.querySelector(`td.cell[data-row="${minRow}"][data-col="${minCol}"]`);
-            if (!mainCell) {
-                 showStatus('Nie znaleziono głównej komórki do scalenia.', 'error');
-                 return;
-            }
+            if (!mainCell) { showStatus('Nie znaleziono głównej komórki.', 'error'); return; }
             
-            const rowSpan = maxRow - minRow + 1;
-            const colSpan = maxCol - minCol + 1;
-            
-            // Collect text from all cells being merged, main cell's text first
             let mergedText = mainCell.textContent.trim();
             selectedCells.forEach(cell => {
-                if (cell !== mainCell && cell.textContent.trim()) {
-                    mergedText += (mergedText ? " " : "") + cell.textContent.trim();
-                }
+                if (cell !== mainCell && cell.textContent.trim()) mergedText += (mergedText ? " " : "") + cell.textContent.trim();
             });
 
-            mainCell.setAttribute('colspan', colSpan);
-            mainCell.setAttribute('rowspan', rowSpan);
-            mainCell.textContent = mergedText; // Set combined text
+            mainCell.setAttribute('colspan', maxCol - minCol + 1);
+            mainCell.setAttribute('rowspan', maxRow - minRow + 1);
+            mainCell.textContent = mergedText;
             
-            // This will effectively "hide" other cells as they won't be rendered by initSpreadsheet
-            // The actual DOM elements for other cells in the merged area will be removed by initSpreadsheet
-            // when it re-renders based on the new data with colspan/rowspan.
-            const currentData = serializeTableDataToString();
-            initSpreadsheet(currentData); // Re-initialize to correctly render merged cells
+            const currentData = serializeTableDataToString(); // Serialize before re-init
+            initSpreadsheet(currentData);
             showStatus('Komórki połączone.', 'success');
-            if (isAdminMode) updateSerializedDataOutput(); // Update data string after re-initialization
+            if (isAdminMode) updateSerializedDataOutput();
         }
         
         function unmergeCells() {
-            if (!isAdminMode || selectedCells.length === 0) {
-                 showStatus('Zaznacz komórkę do rozłączenia.', 'error');
-                return;
-            }
-            
+            if (!isAdminMode || selectedCells.length === 0) { showStatus('Zaznacz komórkę do rozłączenia.', 'error'); return; }
             let refreshNeeded = false;
             selectedCells.forEach(cell => {
                 if (cell.hasAttribute('colspan') || cell.hasAttribute('rowspan')) {
@@ -945,35 +885,28 @@
                     refreshNeeded = true;
                 }
             });
-            
             if (refreshNeeded) {
                 const currentData = serializeTableDataToString();
-                initSpreadsheet(currentData); // Re-initialize to render unmerged cells correctly
-                showStatus('Komórki rozłączone. Tabela odświeżona.', 'success');
+                initSpreadsheet(currentData);
+                showStatus('Komórki rozłączone.', 'success');
                 if (isAdminMode) updateSerializedDataOutput();
-            } else {
-                showStatus('Zaznaczona komórka nie jest scalona.', 'info');
-            }
+            } else showStatus('Zaznaczona komórka nie jest scalona.', 'info');
         }
         
-        // Add/Delete Rows/Columns
         function addRow() {
             if (!isAdminMode) return;
             const tbody = document.getElementById('spreadsheetBody');
             const numRows = tbody.children.length;
             const numCols = document.querySelector('#spreadsheet thead tr').children.length - 1;
-
             const newRow = document.createElement('tr');
             const rowHeader = document.createElement('td');
             rowHeader.className = 'row-header';
             rowHeader.textContent = numRows + 1;
             newRow.appendChild(rowHeader);
-
             for (let j = 0; j < numCols; j++) {
                 const cell = document.createElement('td');
                 cell.className = 'cell';
-                cell.dataset.row = numRows;
-                cell.dataset.col = j;
+                cell.dataset.row = numRows; cell.dataset.col = j;
                 cell.addEventListener('click', handleCellClick);
                 cell.addEventListener('dblclick', handleCellDblClick);
                 cell.addEventListener('mousedown', handleCellMouseDown);
@@ -988,18 +921,14 @@
             if (!isAdminMode) return;
             const headerRow = document.querySelector('#spreadsheet thead tr');
             const numCols = headerRow.children.length - 1;
-            
             const newColHeader = document.createElement('th');
             newColHeader.className = 'col-header';
             newColHeader.textContent = String.fromCharCode(65 + numCols);
             headerRow.appendChild(newColHeader);
-
-            const tbody = document.getElementById('spreadsheetBody');
-            Array.from(tbody.children).forEach((row, rowIndex) => {
+            Array.from(document.getElementById('spreadsheetBody').children).forEach((row, rowIndex) => {
                 const cell = document.createElement('td');
                 cell.className = 'cell';
-                cell.dataset.row = rowIndex;
-                cell.dataset.col = numCols;
+                cell.dataset.row = rowIndex; cell.dataset.col = numCols;
                 cell.addEventListener('click', handleCellClick);
                 cell.addEventListener('dblclick', handleCellDblClick);
                 cell.addEventListener('mousedown', handleCellMouseDown);
@@ -1010,96 +939,64 @@
         }
 
         function deleteRow() {
-            if (!isAdminMode || !selectedCell) {
-                showStatus('Zaznacz komórkę w wierszu do usunięcia.', 'error');
-                return;
-            }
+            if (!isAdminMode || !selectedCell) { showStatus('Zaznacz komórkę w wierszu do usunięcia.', 'error'); return; }
             const rowElement = selectedCell.closest('tr');
-            if (rowElement && document.getElementById('spreadsheetBody').children.length > 1) { // Keep at least one row
+            const tbody = document.getElementById('spreadsheetBody');
+            if (rowElement && tbody.children.length > 1) {
                 rowElement.remove();
-                // Re-index rows
-                Array.from(document.getElementById('spreadsheetBody').children).forEach((row, index) => {
+                Array.from(tbody.children).forEach((row, index) => {
                     row.querySelector('.row-header').textContent = index + 1;
                     Array.from(row.querySelectorAll('.cell')).forEach(cell => cell.dataset.row = index);
                 });
                 selectedCell = null; selectedCells = [];
                 if (isAdminMode) updateSerializedDataOutput();
-            } else if (document.getElementById('spreadsheetBody').children.length <= 1) {
-                showStatus('Nie można usunąć ostatniego wiersza.', 'error');
-            }
+            } else if (tbody.children.length <= 1) showStatus('Nie można usunąć ostatniego wiersza.', 'error');
         }
 
         function deleteColumn() {
-            if (!isAdminMode || !selectedCell) {
-                 showStatus('Zaznacz komórkę w kolumnie do usunięcia.', 'error');
-                return;
-            }
+            if (!isAdminMode || !selectedCell) { showStatus('Zaznacz komórkę w kolumnie.', 'error'); return; }
             const colIndex = parseInt(selectedCell.dataset.col);
             const headerRow = document.querySelector('#spreadsheet thead tr');
-            
-            if (headerRow.children.length -1 <= 1) { // Keep at least one column
-                 showStatus('Nie można usunąć ostatniej kolumny.', 'error');
-                return;
-            }
+            if (headerRow.children.length - 1 <= 1) { showStatus('Nie można usunąć ostatniej kolumny.', 'error'); return; }
 
-            if (headerRow.children[colIndex + 1]) {
-                headerRow.children[colIndex + 1].remove();
-            }
-
+            if (headerRow.children[colIndex + 1]) headerRow.children[colIndex + 1].remove();
             Array.from(document.getElementById('spreadsheetBody').children).forEach(row => {
-                if (row.children[colIndex + 1]) {
-                    row.children[colIndex + 1].remove();
-                }
+                if (row.children[colIndex + 1]) row.children[colIndex + 1].remove();
             });
-
-            // Re-index column headers and cell data-col attributes
             Array.from(headerRow.children).forEach((th, index) => {
                 if (index > 0) th.textContent = String.fromCharCode(65 + index - 1);
             });
-            Array.from(document.querySelectorAll('#spreadsheetBody .cell')).forEach(cell => {
-                const currentCol = parseInt(cell.dataset.col);
-                if (currentCol > colIndex) {
-                    cell.dataset.col = currentCol - 1;
-                }
+            // Re-index data-col for remaining cells (this is important)
+            Array.from(document.querySelectorAll('#spreadsheetBody tr')).forEach(row => {
+                Array.from(row.querySelectorAll('.cell')).forEach((cell, newColIndex) => {
+                    cell.dataset.col = newColIndex;
+                });
             });
             selectedCell = null; selectedCells = [];
             if (isAdminMode) updateSerializedDataOutput();
         }
         
-        // Keyboard interactions
         document.addEventListener('keydown', (e) => {
-            if (!isAdminMode) return;
-            
-            if (e.key === 'Delete' && selectedCells.length > 0 && document.activeElement.tagName !== 'INPUT') {
+            if (!isAdminMode || document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+            if (e.key === 'Delete' && selectedCells.length > 0) {
                 e.preventDefault();
-                selectedCells.forEach(cell => {
-                    if(!cell.classList.contains('editing')) cell.textContent = '';
-                });
+                selectedCells.forEach(cell => { if(!cell.classList.contains('editing')) cell.textContent = ''; });
                 if (isAdminMode) updateSerializedDataOutput();
             }
-            
-            // Basic Ctrl+C, Ctrl+V (text only) could be added here if needed,
-            // but the primary copy mechanism is for the whole table data.
         });
 
-        // Helper to convert rgb() to hex for color pickers
         function rgbToHex(rgb) {
-            if (!rgb || !rgb.startsWith('rgb')) return rgb; // Return if not rgb or already hex/named
+            if (!rgb || !rgb.startsWith('rgb')) return rgb;
             const result = /^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/.exec(rgb);
             if (!result) return rgb;
-            const r = parseInt(result[1]).toString(16).padStart(2, '0');
-            const g = parseInt(result[2]).toString(16).padStart(2, '0');
-            const b = parseInt(result[3]).toString(16).padStart(2, '0');
-            return `#${r}${g}${b}`;
+            return `#${parseInt(result[1]).toString(16).padStart(2, '0')}${parseInt(result[2]).toString(16).padStart(2, '0')}${parseInt(result[3]).toString(16).padStart(2, '0')}`;
         }
         
-        // Initialization
         document.addEventListener('DOMContentLoaded', () => {
             initSpreadsheet();
-            // Attach event listeners for font size and color pickers to update on any change, not just button click
             document.getElementById('fontSizeInput').addEventListener('change', changeFontSize);
-            document.getElementById('bgColorPicker').addEventListener('input', changeBgColor); // 'input' for live preview
-            document.getElementById('textColorPicker').addEventListener('input', changeTextColor); // 'input' for live preview
+            document.getElementById('bgColorPicker').addEventListener('input', changeBgColor);
+            document.getElementById('textColorPicker').addEventListener('input', changeTextColor);
         });
     </script>
 </body>
