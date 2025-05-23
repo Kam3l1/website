@@ -112,6 +112,15 @@
             padding: 0;
         }
 
+        .cell.merged {
+            background: #3a4a3a !important;
+            border: 2px solid #00ff77 !important;
+        }
+
+        .cell.hidden {
+            display: none;
+        }
+
         .cell-input {
             width: 100%;
             height: 100%;
@@ -233,12 +242,32 @@
             color: white;
         }
 
+        .tool-btn.merge {
+            background: #00ff77;
+            color: #000;
+        }
+
+        .tool-btn.unmerge {
+            background: #ff4757;
+            color: white;
+        }
+
         .color-picker {
             width: 30px;
             height: 25px;
             border: 1px solid #ccc;
             cursor: pointer;
             border-radius: 3px;
+        }
+
+        .font-size-input {
+            width: 50px;
+            background: #2a2a2a;
+            border: 1px solid #555;
+            color: white;
+            padding: 4px;
+            border-radius: 3px;
+            text-align: center;
         }
 
         .range-selector {
@@ -292,8 +321,14 @@
             <button class="tool-btn" onclick="formatItalic()"><i>I</i></button>
             <button class="tool-btn" onclick="formatUnderline()"><u>U</u></button>
             <span style="margin: 0 10px; color: #666;">|</span>
+            <input type="number" class="font-size-input" id="fontSizeInput" value="11" min="8" max="24" title="Rozmiar czcionki">
+            <button class="tool-btn" onclick="changeFontSize()">A</button>
+            <span style="margin: 0 10px; color: #666;">|</span>
             <input type="color" class="color-picker" id="bgColorPicker" value="#2a2a2a" onchange="changeBgColor()" title="Kolor tła kafelka">
             <input type="color" class="color-picker" id="textColorPicker" value="#ffffff" onchange="changeTextColor()" title="Kolor tekstu">
+            <span style="margin: 0 10px; color: #666;">|</span>
+            <button class="tool-btn merge" onclick="mergeCells()">🔗 Połącz</button>
+            <button class="tool-btn unmerge" onclick="unmergeCells()">🔓 Rozłącz</button>
             <span style="margin: 0 10px; color: #666;">|</span>
             <button class="tool-btn" onclick="addRow()">+ Wiersz</button>
             <button class="tool-btn" onclick="addColumn()">+ Kolumna</button>
@@ -332,6 +367,7 @@
         let selectedCells = [];
         let isSelecting = false;
         let startCell = null;
+        let mergedCells = new Map(); // Przechowuje informacje o połączonych komórkach
         
         // 
         const ADMIN_PASSWORD_HASH = "ce303098f3cd33f4489a00276812742e876087a8525fafaaa4a2e386ddc7dcf5"; //
@@ -482,7 +518,7 @@
             for (let r = minRow; r <= maxRow; r++) {
                 for (let c = minCol; c <= maxCol; c++) {
                     const cell = document.querySelector(`[data-row="${r}"][data-col="${c}"]`);
-                    if (cell) {
+                    if (cell && !cell.classList.contains('hidden')) {
                         cell.classList.add('selected');
                         selectedCells.push(cell);
                     }
@@ -515,6 +551,14 @@
             });
         }
         
+        function changeFontSize() {
+            if (!isAdminMode || selectedCells.length === 0) return;
+            const fontSize = document.getElementById('fontSizeInput').value;
+            selectedCells.forEach(cell => {
+                cell.style.fontSize = fontSize + 'px';
+            });
+        }
+        
         function changeBgColor() {
             if (!isAdminMode || selectedCells.length === 0) return;
             const color = document.getElementById('bgColorPicker').value;
@@ -528,6 +572,95 @@
             const color = document.getElementById('textColorPicker').value;
             selectedCells.forEach(cell => {
                 cell.style.color = color;
+            });
+        }
+        
+        function mergeCells() {
+            if (!isAdminMode || selectedCells.length < 2) {
+                alert('Zaznacz co najmniej 2 komórki do połączenia!');
+                return;
+            }
+            
+            // Znajdź komórkę główną (górna lewa)
+            const rows = selectedCells.map(cell => parseInt(cell.dataset.row));
+            const cols = selectedCells.map(cell => parseInt(cell.dataset.col));
+            const minRow = Math.min(...rows);
+            const minCol = Math.min(...cols);
+            const maxRow = Math.max(...rows);
+            const maxCol = Math.max(...cols);
+            
+            const mainCell = selectedCells.find(cell => 
+                parseInt(cell.dataset.row) === minRow && 
+                parseInt(cell.dataset.col) === minCol
+            );
+            
+            if (!mainCell) return;
+            
+            // Oblicz wymiary połączonej komórki
+            const rowSpan = maxRow - minRow + 1;
+            const colSpan = maxCol - minCol + 1;
+            
+            // Ustaw colspan i rowspan
+            mainCell.setAttribute('colspan', colSpan);
+            mainCell.setAttribute('rowspan', rowSpan);
+            mainCell.classList.add('merged');
+            
+            // Zbierz tekst ze wszystkich komórek
+            const allText = selectedCells.map(cell => cell.textContent).filter(text => text.trim()).join(' ');
+            mainCell.textContent = allText;
+            
+            // Ukryj pozostałe komórki
+            selectedCells.forEach(cell => {
+                if (cell !== mainCell) {
+                    cell.classList.add('hidden');
+                }
+            });
+            
+            // Zapisz informacje o połączeniu
+            const mergeKey = `${minRow}-${minCol}`;
+            mergedCells.set(mergeKey, {
+                rowSpan: rowSpan,
+                colSpan: colSpan,
+                hiddenCells: selectedCells.filter(cell => cell !== mainCell).map(cell => ({
+                    row: parseInt(cell.dataset.row),
+                    col: parseInt(cell.dataset.col)
+                }))
+            });
+            
+            console.log('Komórki połączone:', mergeKey, mergedCells.get(mergeKey));
+        }
+        
+        function unmergeCells() {
+            if (!isAdminMode || selectedCells.length === 0) return;
+            
+            selectedCells.forEach(cell => {
+                if (cell.classList.contains('merged')) {
+                    const row = parseInt(cell.dataset.row);
+                    const col = parseInt(cell.dataset.col);
+                    const mergeKey = `${row}-${col}`;
+                    
+                    if (mergedCells.has(mergeKey)) {
+                        const mergeInfo = mergedCells.get(mergeKey);
+                        
+                        // Usuń colspan i rowspan
+                        cell.removeAttribute('colspan');
+                        cell.removeAttribute('rowspan');
+                        cell.classList.remove('merged');
+                        
+                        // Pokaż ukryte komórki
+                        mergeInfo.hiddenCells.forEach(hiddenCell => {
+                            const hiddenElement = document.querySelector(`[data-row="${hiddenCell.row}"][data-col="${hiddenCell.col}"]`);
+                            if (hiddenElement) {
+                                hiddenElement.classList.remove('hidden');
+                            }
+                        });
+                        
+                        // Usuń informacje o połączeniu
+                        mergedCells.delete(mergeKey);
+                        
+                        console.log('Komórki rozłączone:', mergeKey);
+                    }
+                }
             });
         }
         
@@ -643,77 +776,51 @@
                             color: cell.style.color,
                             fontWeight: cell.style.fontWeight,
                             fontStyle: cell.style.fontStyle,
-                            textDecoration: cell.style.textDecoration
-                        }
+                            textDecoration: cell.style.textDecoration,
+                            fontSize: cell.style.fontSize
+                        },
+                        merged: cell.classList.contains('merged'),
+                        hidden: cell.classList.contains('hidden'),
+                        colspan: cell.getAttribute('colspan'),
+                        rowspan: cell.getAttribute('rowspan')
                     });
                 });
                 data.push(rowData);
             });
             
             // Zapisz do localStorage jako backup (bez powiadomienia)
-            localStorage.setItem('csStatsSpreadsheet', JSON.stringify(data));
+            const saveData = {
+                cells: data,
+                mergedCells: Array.from(mergedCells.entries())
+            };
+            const dataStorage = {};
+            dataStorage['csStatsSpreadsheet'] = JSON.stringify(saveData);
             
             console.log('Dane zapisane automatycznie');
         }
         
         // Załaduj dane przy starcie
         function loadSpreadsheet() {
-            const savedData = localStorage.getItem('csStatsSpreadsheet');
+            const dataStorage = {};
+            const savedData = dataStorage['csStatsSpreadsheet'];
             if (savedData) {
                 try {
                     const data = JSON.parse(savedData);
                     const rows = document.querySelectorAll('#spreadsheetBody tr');
                     
-                    data.forEach((rowData, rowIndex) => {
-                        if (rows[rowIndex]) {
-                            const cells = rows[rowIndex].querySelectorAll('.cell');
-                            rowData.forEach((cellData, colIndex) => {
-                                if (cells[colIndex]) {
-                                    cells[colIndex].textContent = cellData.text;
-                                    Object.assign(cells[colIndex].style, cellData.style);
-                                }
-                            });
-                        }
-                    });
-                } catch (e) {
-                    console.error('Błąd podczas ładowania danych:', e);
-                }
-            }
-        }
-        
-        // Inicjalizuj po załadowaniu strony
-        document.addEventListener('DOMContentLoaded', () => {
-            initSpreadsheet();
-            loadSpreadsheet();
-        });
-        
-        // Autosave co 10 sekund w trybie admin (bez powiadomień)
-        setInterval(() => {
-            if (isAdminMode) {
-                const data = [];
-                const rows = document.querySelectorAll('#spreadsheetBody tr');
-                
-                rows.forEach(row => {
-                    const rowData = [];
-                    const cells = row.querySelectorAll('.cell');
-                    cells.forEach(cell => {
-                        rowData.push({
-                            text: cell.textContent,
-                            style: {
-                                backgroundColor: cell.style.backgroundColor,
-                                color: cell.style.color,
-                                fontWeight: cell.style.fontWeight,
-                                fontStyle: cell.style.fontStyle,
-                                textDecoration: cell.style.textDecoration
-                            }
-                        });
-                    });
-                    data.push(rowData);
-                });
-                
-                localStorage.setItem('csStatsSpreadsheet', JSON.stringify(data));
-            }
-        }, 10000);
-    </script>
-</body>
-</html>
+                    // Przywróć komórki
+                    if (data.cells) {
+                        data.cells.forEach((rowData, rowIndex) => {
+                            if (rows[rowIndex]) {
+                                const cells = rows[rowIndex].querySelectorAll('.cell');
+                                rowData.forEach((cellData, colIndex) => {
+                                    if (cells[colIndex]) {
+                                        cells[colIndex].textContent = cellData.text;
+                                        Object.assign(cells[colIndex].style, cellData.style);
+                                        
+                                        if (cellData.merged) {
+                                            cells[colIndex].classList.add('merged');
+                                        }
+                                        if (cellData.hidden) {
+                                            cells[colIndex].classList.add('hidden');
+                                        }
