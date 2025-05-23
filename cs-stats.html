@@ -63,33 +63,16 @@
         .cell {
             background: #2a2a2a;
             color: white;
-        }
-        .admin-btn {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background: #333;
-            border: 1px solid #555;
-            color: #888;
-            padding: 8px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            opacity: 0.3;
-            transition: opacity 0.3s;
-            z-index: 1000;
-        }
-        .admin-btn:hover {
-            opacity: 0.8;
+            min-width: 80px;
         }
         .toolbar {
             display: none;
             margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 8px;
         }
         .toolbar.visible {
             display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
         }
         .tool-btn {
             background: #2a2a2a;
@@ -99,6 +82,55 @@
             cursor: pointer;
             font-size: 12px;
             color: white;
+        }
+        .tool-btn:hover {
+            background: #444;
+        }
+        .admin-toggle {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: #1a1a1a;
+            border: none;
+            color: #888;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            opacity: 0.3;
+            transition: opacity 0.3s;
+            z-index: 1000;
+        }
+        .admin-toggle:hover {
+            opacity: 0.8;
+        }
+        .admin-panel {
+            display: none;
+            position: fixed;
+            bottom: 60px;
+            left: 20px;
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            z-index: 1001;
+        }
+        .admin-panel input[type="password"] {
+            padding: 6px;
+            width: 160px;
+            margin-right: 8px;
+            border: 1px solid #555;
+            background: #1a1a1a;
+            color: white;
+            border-radius: 4px;
+        }
+        .admin-panel button {
+            padding: 6px 10px;
+            border: none;
+            border-radius: 4px;
+            background: #00ff77;
+            color: #000;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -111,10 +143,17 @@
 
     <div class="toolbar" id="toolbar">
         <button class="tool-btn" onclick="copyTableHTML()">📋 Kopiuj HTML</button>
+        <button class="tool-btn" onclick="addRow()">➕ Dodaj wiersz</button>
+        <button class="tool-btn" onclick="addColumn()">➕ Dodaj kolumnę</button>
+        <button class="tool-btn" onclick="deleteRow()">➖ Usuń wiersz</button>
+        <button class="tool-btn" onclick="deleteColumn()">➖ Usuń kolumnę</button>
+        <input type="color" class="tool-btn" onchange="changeTextColor(this.value)" title="Kolor tekstu">
+        <input type="color" class="tool-btn" onchange="changeBackgroundColor(this.value)" title="Kolor tła">
+        <input type="number" min="8" max="32" value="12" class="tool-btn" onchange="changeFontSize(this.value)" title="Czcionka">
     </div>
 
     <div class="spreadsheet-container">
-        <table class="spreadsheet">
+        <table class="spreadsheet" id="spreadsheet">
             <thead>
                 <tr>
                     <th class="row-header"></th>
@@ -129,52 +168,119 @@
                 </tr>
             </thead>
             <tbody id="spreadsheetBody">
-                <!-- Zawartość tabeli tutaj -->
                 <tr><td class="row-header">1</td><td class="cell">TEST</td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td></tr>
             </tbody>
         </table>
     </div>
 
-    <button class="admin-btn" onclick="enterAdminMode()">⚙</button>
+    <button class="admin-toggle" onclick="toggleAdminPanel()"><i class="fas fa-cog"></i></button>
+
+    <div class="admin-panel" id="adminPanel">
+        <input type="password" id="adminPassword" placeholder="Hasło">
+        <button onclick="checkAdminPassword()">Zaloguj</button>
+    </div>
 
     <script>
-        function enterAdminMode() {
-            document.getElementById('toolbar').classList.add('visible');
-            alert("Tryb administratora aktywowany! Możesz edytować tabelę i skopiować jej kod.");
-            makeTableEditable();
+        const ADMIN_PASSWORD_HASH = "<TU_WKLEJ_SHA256_HASLO>"; // <- Wklej swoje SHA256 hasło
+
+        function toggleAdminPanel() {
+            const panel = document.getElementById('adminPanel');
+            panel.style.display = (panel.style.display === 'block') ? 'none' : 'block';
+        }
+
+        async function checkAdminPassword() {
+            const input = document.getElementById('adminPassword').value;
+            const encoder = new TextEncoder();
+            const data = encoder.encode(input);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+            if (hashHex === ADMIN_PASSWORD_HASH) {
+                document.getElementById('toolbar').classList.add('visible');
+                document.getElementById('adminPanel').style.display = 'none';
+                alert("Tryb administratora aktywowany! Możesz edytować tabelę i skopiować jej kod.");
+                makeTableEditable();
+            } else {
+                alert("Nieprawidłowe hasło");
+            }
         }
 
         function makeTableEditable() {
-            const cells = document.querySelectorAll('.cell');
-            cells.forEach(cell => {
-                cell.addEventListener('dblclick', () => {
-                    const currentText = cell.textContent;
+            document.querySelectorAll('.cell').forEach(cell => {
+                cell.ondblclick = () => {
+                    const current = cell.textContent;
                     const input = document.createElement('input');
                     input.type = 'text';
-                    input.value = currentText;
+                    input.value = current;
                     input.className = 'cell';
-                    input.addEventListener('blur', () => {
-                        cell.textContent = input.value;
-                        cell.style.display = '';
-                    });
-                    input.addEventListener('keydown', (e) => {
-                        if (e.key === 'Enter') input.blur();
-                    });
+                    input.onblur = () => cell.textContent = input.value;
+                    input.onkeydown = e => e.key === 'Enter' && input.blur();
                     cell.textContent = '';
                     cell.appendChild(input);
                     input.focus();
-                });
+                }
             });
         }
 
         function copyTableHTML() {
             const tbody = document.getElementById('spreadsheetBody');
-            const html = tbody.outerHTML;
-            navigator.clipboard.writeText(html).then(() => {
-                alert("Kod HTML tabeli został skopiowany do schowka! Wklej go do pliku cs-stats.html na GitHubie.");
-            }).catch(err => {
-                alert("Błąd kopiowania: " + err);
-            });
+            navigator.clipboard.writeText(tbody.outerHTML).then(() => alert("Skopiowano HTML tabeli"));
+        }
+
+        function addRow() {
+            const table = document.getElementById('spreadsheetBody');
+            const rowCount = table.rows.length;
+            const row = table.insertRow();
+            const cell = row.insertCell();
+            cell.className = 'row-header';
+            cell.textContent = rowCount + 1;
+            for (let i = 0; i < table.rows[0].cells.length - 1; i++) {
+                const cell = row.insertCell();
+                cell.className = 'cell';
+                cell.textContent = '';
+            }
+            makeTableEditable();
+        }
+
+        function addColumn() {
+            const headers = document.querySelectorAll('.col-header');
+            const table = document.getElementById('spreadsheet');
+            const newCol = document.createElement('th');
+            newCol.className = 'col-header';
+            newCol.textContent = String.fromCharCode(65 + headers.length);
+            table.rows[0].appendChild(newCol);
+            for (let i = 1; i < table.rows.length; i++) {
+                const cell = table.rows[i].insertCell();
+                cell.className = 'cell';
+                cell.textContent = '';
+            }
+            makeTableEditable();
+        }
+
+        function deleteRow() {
+            const table = document.getElementById('spreadsheetBody');
+            if (table.rows.length > 1) table.deleteRow(-1);
+        }
+
+        function deleteColumn() {
+            const table = document.getElementById('spreadsheet');
+            const colCount = table.rows[0].cells.length;
+            if (colCount > 2) {
+                for (let row of table.rows) row.deleteCell(-1);
+            }
+        }
+
+        function changeTextColor(color) {
+            document.querySelectorAll('.cell').forEach(cell => cell.style.color = color);
+        }
+
+        function changeBackgroundColor(color) {
+            document.querySelectorAll('.cell').forEach(cell => cell.style.backgroundColor = color);
+        }
+
+        function changeFontSize(size) {
+            document.querySelectorAll('.cell').forEach(cell => cell.style.fontSize = size + 'px');
         }
     </script>
 </body>
