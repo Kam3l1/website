@@ -166,6 +166,7 @@
             padding: 20px;
             z-index: 1001;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+            min-width: 400px;
         }
 
         .admin-overlay {
@@ -187,6 +188,16 @@
             border-radius: 4px;
             margin-right: 10px;
             width: 200px;
+        }
+
+        .github-token-input {
+            padding: 10px;
+            background: #333;
+            border: 1px solid #555;
+            color: white;
+            border-radius: 4px;
+            width: 100%;
+            margin: 10px 0;
         }
 
         .confirm-btn {
@@ -278,6 +289,46 @@
             display: none;
         }
 
+        .status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #333;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #ccc;
+            z-index: 1000;
+        }
+
+        .status.success {
+            background: #00ff77;
+            color: #000;
+        }
+
+        .status.error {
+            background: #ff4757;
+            color: white;
+        }
+
+        .github-config {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #555;
+        }
+
+        .config-row {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px;
+        }
+
+        .config-label {
+            color: #ccc;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
         @media (max-width: 768px) {
             .title {
                 font-size: 2rem;
@@ -302,6 +353,23 @@
         <div>
             <input type="password" class="password-input" id="passwordInput" placeholder="Wpisz hasło...">
             <button class="confirm-btn" onclick="checkPassword()">Potwierdź</button>
+        </div>
+        
+        <div class="github-config" id="githubConfig" style="display: none;">
+            <h4 style="color: white; margin: 0 0 10px 0;">Konfiguracja GitHub</h4>
+            <div class="config-row">
+                <label class="config-label">GitHub Personal Access Token:</label>
+                <input type="password" class="github-token-input" id="githubToken" placeholder="ghp_xxxxxxxxxxxx">
+            </div>
+            <div class="config-row">
+                <label class="config-label">Nazwa użytkownika GitHub:</label>
+                <input type="text" class="github-token-input" id="githubUsername" placeholder="username">
+            </div>
+            <div class="config-row">
+                <label class="config-label">Nazwa repozytorium:</label>
+                <input type="text" class="github-token-input" id="githubRepo" placeholder="repository-name">
+            </div>
+            <button class="confirm-btn" onclick="saveGithubConfig()" style="width: 100%; margin-top: 10px;">Zapisz konfigurację</button>
         </div>
     </div>
 
@@ -339,7 +407,7 @@
             <button class="tool-btn" onclick="deleteRow()">- Wiersz</button>
             <button class="tool-btn" onclick="deleteColumn()">- Kolumna</button>
             <span style="margin: 0 10px; color: #666;">|</span>
-            <button class="tool-btn" onclick="saveSpreadsheet()">💾 Zapisz</button>
+            <button class="tool-btn" onclick="saveToGithub()">💾 Zapisz na GitHub</button>
         </div>
         
         <table class="spreadsheet" id="spreadsheet">
@@ -364,6 +432,7 @@
     </div>
 
     <button class="admin-btn" onclick="showAdminPanel()">⚙</button>
+    <div class="status" id="status">Gotowy</div>
 
     <script>
         let isAdminMode = false;
@@ -371,16 +440,31 @@
         let selectedCells = [];
         let isSelecting = false;
         let startCell = null;
-        let mergedCells = new Map(); // Przechowuje informacje o połączonych komórkach
+        let mergedCells = new Map();
+        let githubConfig = {
+            token: '',
+            username: '',
+            repo: ''
+        };
         
-        // 
-        const ADMIN_PASSWORD_HASH = "ce303098f3cd33f4489a00276812742e876087a8525fafaaa4a2e386ddc7dcf5"; //
+        const ADMIN_PASSWORD_HASH = "ce303098f3cd33f4489a00276812742e876087a8525fafaaa4a2e386ddc7dcf5";
         
-        // Inicjalizuj tabelę
+        function showStatus(message, type = 'normal') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status';
+            if (type === 'success') status.classList.add('success');
+            if (type === 'error') status.classList.add('error');
+            
+            setTimeout(() => {
+                status.textContent = 'Gotowy';
+                status.className = 'status';
+            }, 3000);
+        }
+        
         function initSpreadsheet() {
             const tbody = document.getElementById('spreadsheetBody');
             
-            // Utwórz 20 wierszy z przykładowymi danymi CS
             const sampleData = [
                 ['TEST', '', '', '', '', '', '', ''],
                 ['', '', '', '', '', '', '', ''],
@@ -392,13 +476,11 @@
             for (let i = 0; i < 20; i++) {
                 const row = document.createElement('tr');
                 
-                // Nagłówek wiersza
                 const rowHeader = document.createElement('td');
                 rowHeader.className = 'row-header';
                 rowHeader.textContent = i + 1;
                 row.appendChild(rowHeader);
                 
-                // Komórki
                 for (let j = 0; j < 8; j++) {
                     const cell = document.createElement('td');
                     cell.className = 'cell';
@@ -430,12 +512,12 @@
             document.getElementById('adminOverlay').style.display = 'none';
             document.getElementById('adminPanel').style.display = 'none';
             document.getElementById('passwordInput').value = '';
+            document.getElementById('githubConfig').style.display = 'none';
         }
         
         async function checkPassword() {
             const password = document.getElementById('passwordInput').value;
             
-            // Hashuj wprowadzone hasło
             const encoder = new TextEncoder();
             const data = encoder.encode(password);
             const hashBuffer = await crypto.subtle.digest('SHA-256', data);
@@ -444,11 +526,193 @@
             
             if (hashHex === ADMIN_PASSWORD_HASH) {
                 isAdminMode = true;
-                closeAdminPanel();
                 document.getElementById('toolbar').classList.add('visible');
-                alert('Tryb administratora aktywowany! Możesz teraz edytować tabelę.');
+                document.getElementById('githubConfig').style.display = 'block';
+                loadGithubConfig();
+                showStatus('Tryb administratora aktywowany!', 'success');
             } else {
-                alert('Nieprawidłowe hasło!');
+                showStatus('Nieprawidłowe hasło!', 'error');
+            }
+        }
+        
+        function loadGithubConfig() {
+            const stored = JSON.parse(localStorage.getItem('githubConfig') || '{}');
+            if (stored.token) {
+                document.getElementById('githubToken').value = stored.token;
+                document.getElementById('githubUsername').value = stored.username || '';
+                document.getElementById('githubRepo').value = stored.repo || '';
+                githubConfig = stored;
+            }
+        }
+        
+        function saveGithubConfig() {
+            githubConfig = {
+                token: document.getElementById('githubToken').value,
+                username: document.getElementById('githubUsername').value,
+                repo: document.getElementById('githubRepo').value
+            };
+            
+            localStorage.setItem('githubConfig', JSON.stringify(githubConfig));
+            showStatus('Konfiguracja GitHub zapisana!', 'success');
+            closeAdminPanel();
+        }
+        
+        async function loadFromGithub() {
+            if (!githubConfig.token || !githubConfig.username || !githubConfig.repo) {
+                return;
+            }
+            
+            try {
+                showStatus('Ładowanie danych z GitHub...');
+                
+                const response = await fetch(`https://api.github.com/repos/${githubConfig.username}/${githubConfig.repo}/contents/spreadsheet-data.json`, {
+                    headers: {
+                        'Authorization': `token ${githubConfig.token}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const fileData = await response.json();
+                    const content = JSON.parse(atob(fileData.content));
+                    
+                    const rows = document.querySelectorAll('#spreadsheetBody tr');
+                    
+                    if (content.cells) {
+                        content.cells.forEach((rowData, rowIndex) => {
+                            if (rows[rowIndex]) {
+                                const cells = rows[rowIndex].querySelectorAll('.cell');
+                                rowData.forEach((cellData, colIndex) => {
+                                    if (cells[colIndex]) {
+                                        cells[colIndex].textContent = cellData.text || '';
+                                        if (cellData.style) {
+                                            Object.assign(cells[colIndex].style, cellData.style);
+                                        }
+                                        
+                                        if (cellData.merged) {
+                                            cells[colIndex].classList.add('merged');
+                                            if (cellData.colspan) {
+                                                cells[colIndex].setAttribute('colspan', cellData.colspan);
+                                            }
+                                            if (cellData.rowspan) {
+                                                cells[colIndex].setAttribute('rowspan', cellData.rowspan);
+                                            }
+                                        }
+                                        if (cellData.hidden) {
+                                            cells[colIndex].classList.add('hidden');
+                                        }
+                                    }
+                                });
+                            }
+                        });
+                    }
+                    
+                    if (content.mergedCells) {
+                        mergedCells = new Map(content.mergedCells);
+                    }
+                    
+                    showStatus('Dane załadowane z GitHub!', 'success');
+                } else if (response.status === 404) {
+                    showStatus('Brak zapisanych danych na GitHub');
+                } else {
+                    throw new Error(`GitHub API Error: ${response.status}`);
+                }
+            } catch (error) {
+                console.error('Błąd podczas ładowania z GitHub:', error);
+                showStatus('Błąd podczas ładowania z GitHub', 'error');
+            }
+        }
+        
+        async function saveToGithub() {
+            if (!isAdminMode) return;
+            
+            if (!githubConfig.token || !githubConfig.username || !githubConfig.repo) {
+                showStatus('Skonfiguruj GitHub w panelu administratora!', 'error');
+                return;
+            }
+            
+            try {
+                showStatus('Zapisywanie na GitHub...');
+                
+                const data = [];
+                const rows = document.querySelectorAll('#spreadsheetBody tr');
+                
+                rows.forEach(row => {
+                    const rowData = [];
+                    const cells = row.querySelectorAll('.cell');
+                    cells.forEach(cell => {
+                        rowData.push({
+                            text: cell.textContent,
+                            style: {
+                                backgroundColor: cell.style.backgroundColor,
+                                color: cell.style.color,
+                                fontWeight: cell.style.fontWeight,
+                                fontStyle: cell.style.fontStyle,
+                                textDecoration: cell.style.textDecoration,
+                                fontSize: cell.style.fontSize,
+                                textAlign: cell.style.textAlign
+                            },
+                            merged: cell.classList.contains('merged'),
+                            hidden: cell.classList.contains('hidden'),
+                            colspan: cell.getAttribute('colspan'),
+                            rowspan: cell.getAttribute('rowspan')
+                        });
+                    });
+                    data.push(rowData);
+                });
+                
+                const saveData = {
+                    cells: data,
+                    mergedCells: Array.from(mergedCells.entries()),
+                    lastUpdate: new Date().toISOString()
+                };
+                
+                // Sprawdź czy plik już istnieje
+                let sha = null;
+                try {
+                    const existingFile = await fetch(`https://api.github.com/repos/${githubConfig.username}/${githubConfig.repo}/contents/spreadsheet-data.json`, {
+                        headers: {
+                            'Authorization': `token ${githubConfig.token}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    });
+                    
+                    if (existingFile.ok) {
+                        const fileData = await existingFile.json();
+                        sha = fileData.sha;
+                    }
+                } catch (e) {
+                    // Plik nie istnieje, to OK
+                }
+                
+                // Zapisz plik
+                const content = btoa(JSON.stringify(saveData, null, 2));
+                const payload = {
+                    message: `Update spreadsheet data - ${new Date().toLocaleString()}`,
+                    content: content,
+                    ...(sha && { sha })
+                };
+                
+                const response = await fetch(`https://api.github.com/repos/${githubConfig.username}/${githubConfig.repo}/contents/spreadsheet-data.json`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${githubConfig.token}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (response.ok) {
+                    showStatus('Zapisano na GitHub!', 'success');
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(`GitHub API Error: ${response.status} - ${errorData.message}`);
+                }
+                
+            } catch (error) {
+                console.error('Błąd podczas zapisywania na GitHub:', error);
+                showStatus('Błąd podczas zapisywania na GitHub', 'error');
             }
         }
         
@@ -459,7 +723,6 @@
             selectedCell = e.target;
             selectedCell.classList.add('selected');
             
-            // Wyczyść zaznaczenie wielokrotne
             selectedCells.forEach(cell => cell.classList.remove('selected'));
             selectedCells = [selectedCell];
         }
@@ -502,18 +765,15 @@
         function continueSelection(e) {
             if (!isSelecting || !isAdminMode) return;
             
-            // Zaznacz zakres komórek
             const endCell = e.target;
             const startRow = parseInt(startCell.dataset.row);
             const startCol = parseInt(startCell.dataset.col);
             const endRow = parseInt(endCell.dataset.row);
             const endCol = parseInt(endCell.dataset.col);
             
-            // Wyczyść poprzednie zaznaczenie
             selectedCells.forEach(cell => cell.classList.remove('selected'));
             selectedCells = [];
             
-            // Zaznacz zakres
             const minRow = Math.min(startRow, endRow);
             const maxRow = Math.max(startRow, endRow);
             const minCol = Math.min(startCol, endCol);
