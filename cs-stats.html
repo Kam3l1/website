@@ -3,55 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CS Pickems - Kam3l</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Pickems Moved</title>
     <style>
         body {
             margin: 0;
-            padding: 20px;
-            background-color: #121212;
-            font-family: Arial, sans-serif;
-            color: white;
-            min-height: 100vh;
-            position: relative;
-        }
-
-        .header {
+            padding: 0;
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
-            margin-bottom: 30px;
-        }
-
-        .back-btn {
-            color: white;
-            font-size: 24px;
-            text-decoration: none;
-            transition: color 0.3s;
-        }
-
-        .back-btn:hover {
-            color: #00ff77;
-        }
-
-        .title {
-            font-size: 2.5rem;
-            font-weight: bold;
-            background: linear-gradient(90deg, #00ff77, #ff00e6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            min-height: 100vh;
+            background-color: #121212; /* Ciemne tło, jak w poprzednim przykładzie */
+            font-family: Arial, sans-serif;
+            color: white; /* Kolor tekstu */
             text-align: center;
-            flex-grow: 1;
         }
-    <div class="header">
-        <a href="index.html" class="back-btn">
-            <i class="fas fa-arrow-left"></i>
-        </a>
-        <h1 class="title">
-            <i class="fas fa-crosshairs"></i> PICKEMS HAVE BEEN MOVED -> www.kam3l.xyz/cs-pickems.html
-        </h1>
-        <div></div>
-    </div>
 
-    
+        .message-container {
+            padding: 20px;
+        }
+
+        .message-container h1 {
+            font-size: 1.8rem; /* Rozmiar tekstu */
+            font-weight: normal;
+            line-height: 1.6;
+        }
+
+        .message-container a {
+            color: #00ff77; /* Kolor linku, pasujący do motywu */
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .message-container a:hover {
+            text-decoration: underline;
+        }
+
+        /* Opcjonalnie: ikona */
+        .icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: #00ff77; /* Kolor ikony */
+        }
+
+        /* Możesz użyć Font Awesome, jeśli chcesz */
+        /* @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'); */
+
+    </style>
+    <!-- Jeśli chcesz użyć FontAwesome dla ikony, odkomentuj poniższą linię -->
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"> -->
+</head>
+<body>
+    <div class="message-container">
+        <!-- Opcjonalna ikona -->
+        <!-- <div class="icon"><i class="fas fa-arrow-right-to-bracket"></i></div> -->
+        <h1>
+            Pickems have been moved here -> <a href="http://www.kam3l.xyz/cs-pickems.html" target="_blank" rel="noopener noreferrer">www.kam3l.xyz/cs-pickems.html</a>
+        </h1>
+    </div>
+</body>
+</html>
