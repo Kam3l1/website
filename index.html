@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"> <!-- You might want to change this to lang="en" if the primary language of the page is now English -->
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,13 +13,67 @@
     <meta name="apple-mobile-web-app-title" content="MyWebSite" />
     <link rel="manifest" href="/site.webmanifest" />
     <style>
-        /* Pickems button styles */
+        /* General body style for verification screen */
+        body.verifying {
+            overflow: hidden; /* Prevent scrolling while verifying */
+        }
+
+        /* Verification Screen Overlay */
+        #verification-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #1a1a1d; /* Dark background */
+            /* Example of a subtle animated pattern (optional) */
+            /* background-image: linear-gradient(45deg, #2c2c30 25%, transparent 25%),
+                              linear-gradient(-45deg, #2c2c30 25%, transparent 25%),
+                              linear-gradient(45deg, transparent 75%, #2c2c30 75%),
+                              linear-gradient(-45deg, transparent 75%, #2c2c30 75%);
+            background-size: 20px 20px;
+            animation: movePattern 20s linear infinite; */
+            display: flex;
+            flex-direction: column; /* To stack message and Turnstile */
+            align-items: center;
+            justify-content: center;
+            z-index: 9999; /* Make sure it's on top */
+            opacity: 1;
+            transition: opacity 0.5s ease-out;
+        }
+
+        #verification-overlay.hidden {
+            opacity: 0;
+            pointer-events: none; /* Allow interaction with content below after hiding */
+        }
+
+        /* Optional: Message on verification screen */
+        #verification-message {
+            color: #c7c7c7;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 18px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        /* Turnstile container specific to verification screen */
+        #turnstile-verification-widget {
+            /* Styles to center the widget if needed, Turnstile often centers itself */
+        }
+
+
+        /* Main content wrapper - hidden initially */
+        #main-content-wrapper {
+            display: none; /* Hidden by default */
+        }
+
+
+        /* Pickems button styles (unchanged from your version) */
         .pickems-button-container {
             text-align: center;
             margin-top: 25px;
             margin-bottom: 20px;
         }
-
         .pickems-btn {
             display: inline-block;
             padding: 12px 30px;
@@ -35,39 +89,28 @@
             cursor: pointer;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
         }
-
-        .pickems-btn:hover,
-        .pickems-btn:focus {
+        .pickems-btn:hover, .pickems-btn:focus {
             background-color: #3f3f3f;
             color: #ffffff;
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
         }
-
         .pickems-btn:active {
             background-color: #1c1c1c;
             transform: translateY(0px);
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
         }
 
-        /* Styles for Turnstile and protected content */
-        #turnstile-container {
-            margin-top: 20px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: center;
-        }
-
-        #protected-content {
-            display: none; /* Hide content by default */
-        }
-
-        body {
-            /* Assuming styles are in style.css */
-        }
+        /* Your existing .container styles for main content */
         .container {
-            text-align: center; /* Simple centering for block elements inside */
+            text-align: center;
         }
+
+        /* Optional animation for pattern */
+        /* @keyframes movePattern {
+            0% { background-position: 0 0; }
+            100% { background-position: 40px 40px; }
+        } */
 
     </style>
     <!-- 1. Add Cloudflare Turnstile script -->
@@ -76,22 +119,28 @@
         defer
     ></script>
 </head>
-<body>
-    <div class="container">
-        <h1 class="name-heading">Kam3l</h1>
-        <div class="rotating-image-container">
-            <div class="rotating-image">
-                <img src="emoji.png" alt="Rotating emoji" id="rotatingImage">
+<body class="verifying"> <!-- Add class to body initially -->
+
+    <!-- Verification Overlay -->
+    <div id="verification-overlay">
+        <div id="verification-message">
+            Please verify you are human to continue...
+        </div>
+        <div id="turnstile-verification-widget">
+            <!-- Turnstile widget will be rendered here -->
+        </div>
+    </div>
+
+    <!-- Main Content Wrapper (initially hidden) -->
+    <div id="main-content-wrapper">
+        <div class="container">
+            <h1 class="name-heading">Kam3l</h1>
+            <div class="rotating-image-container">
+                <div class="rotating-image">
+                    <img src="emoji.png" alt="Rotating emoji" id="rotatingImage">
+                </div>
             </div>
-        </div>
 
-        <!-- 2. Add placeholder for the Turnstile widget -->
-        <div id="turnstile-container">
-            <!-- Widget will be rendered here by JavaScript -->
-        </div>
-
-        <!-- 3. Container for protected content -->
-        <div id="protected-content">
             <div class="social-icons">
                 <a href="https://steamcommunity.com/profiles/76561199050578760" target="_blank" class="icon-link">
                     <i class="fab fa-steam"></i>
@@ -104,66 +153,81 @@
                 </a>
             </div>
 
-            <!-- New Pickems button -->
             <div class="pickems-button-container">
                 <a href="http://www.kam3l.xyz/cs-pickems.html" class="pickems-btn">
                     Pickems
                 </a>
             </div>
-        </div> <!-- End of #protected-content -->
+        </div> <!-- End of .container -->
+    </div> <!-- End of #main-content-wrapper -->
 
-    </div>
-    <script src="script.js"></script> <!-- Assuming this file exists and is needed -->
+    <script src="script.js"></script>
 
-    <!-- 4. JavaScript for Turnstile handling -->
     <script>
+        const verificationOverlay = document.getElementById('verification-overlay');
+        const mainContentWrapper = document.getElementById('main-content-wrapper');
+
         function onTurnstileSuccess(token) {
             console.log("Turnstile verification successful! Token:", token);
-            document.getElementById('protected-content').style.display = 'block'; // Show protected content
-            // You can also hide the Turnstile container if you wish
-            // document.getElementById('turnstile-container').style.display = 'none';
+            
+            // Hide verification overlay with a fade-out
+            if (verificationOverlay) {
+                verificationOverlay.classList.add('hidden');
+            }
+            
+            // Show main content
+            if (mainContentWrapper) {
+                mainContentWrapper.style.display = 'block'; // Or 'flex', 'grid' depending on your layout
+            }
 
-            // IMPORTANT: In a production environment, the token should be verified server-side.
-            // For this static page, we are unlocking content directly.
+            // Remove verifying class from body to allow scrolling if needed
+            document.body.classList.remove('verifying');
+
+            // Optionally, remove the overlay from DOM after transition if you don't need it anymore
+            // setTimeout(() => {
+            //     if (verificationOverlay) verificationOverlay.remove();
+            // }, 500); // Match transition duration
         }
 
         function onTurnstileError(errorCode) {
             console.error("An error occurred during Turnstile verification. Error code:", errorCode);
-            // You can inform the user, e.g.:
-            // alert("Failed to verify captcha. Please try refreshing the page.");
-            // Or display a message in #turnstile-container
-            const turnstileContainer = document.getElementById('turnstile-container');
-            if (turnstileContainer) {
-                turnstileContainer.innerHTML = '<p style="color: red;">Verification error. Please try refreshing the page.</p>';
+            const verificationMessage = document.getElementById('verification-message');
+            if (verificationMessage) {
+                verificationMessage.innerHTML = '<p style="color: #ff6b6b;">Verification error. Please try refreshing the page or contact support if the issue persists.</p>';
             }
+            // You might want to disable or hide the Turnstile widget itself or give retry options
         }
 
         function onTurnstileExpired() {
             console.warn("Turnstile token has expired. The widget should attempt to refresh.");
-            // You might want to reset the UI, e.g., hide the protected content again
-            document.getElementById('protected-content').style.display = 'none';
-            // The Turnstile widget usually tries to refresh automatically.
-            // If not, you might need logic to re-render or show the container.
-            // document.getElementById('turnstile-container').style.display = 'flex'; // Show again if it was hidden
-            // turnstile.reset(); // You can try to reset the widget if needed
+            // Reset UI if necessary, e.g., show overlay again if it was hidden by some other means
+            // document.body.classList.add('verifying');
+            // if (verificationOverlay) verificationOverlay.classList.remove('hidden');
+            // if (mainContentWrapper) mainContentWrapper.style.display = 'none';
+            // Turnstile widget usually tries to refresh automatically.
+            // You might want to update the message
+            const verificationMessage = document.getElementById('verification-message');
+            if (verificationMessage) {
+                 verificationMessage.textContent = 'Verification expired. Please re-verify.';
+            }
         }
 
         function onloadTurnstileCallback() {
-            const turnstileContainer = document.getElementById('turnstile-container');
-            if (typeof turnstile !== 'undefined' && turnstileContainer) {
-                turnstile.render(turnstileContainer, { // Pass the DOM element, not a selector string
+            const turnstileWidgetContainer = document.getElementById('turnstile-verification-widget');
+            if (typeof turnstile !== 'undefined' && turnstileWidgetContainer) {
+                turnstile.render(turnstileWidgetContainer, {
                     sitekey: '0x4AAAAAABeaX6IJ3KUXhOq1', // <-- IMPORTANT: Replace with your actual public site key!
                     callback: onTurnstileSuccess,
                     'error-callback': onTurnstileError,
                     'expired-callback': onTurnstileExpired,
-                    theme: 'dark', // Or 'light', 'auto' - adjust to your site's appearance
-                    // language: 'en' // You can try setting the language if supported and desired
+                    theme: 'dark', // Keep dark theme for the dark overlay
                 });
             } else {
-                console.error('Turnstile API not loaded or container element not found.');
-                if (turnstileContainer) {
-                     turnstileContainer.innerHTML = '<p style="color: orange;">Could not load verification module. Please try refreshing the page.</p>';
-                }
+                console.error('Turnstile API not loaded or widget container element not found.');
+                const verificationMessage = document.getElementById('verification-message');
+                 if (verificationMessage) {
+                     verificationMessage.innerHTML = '<p style="color: #ffa500;">Could not load verification module. Please try refreshing the page.</p>';
+                 }
             }
         }
     </script>
