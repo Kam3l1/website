@@ -820,7 +820,75 @@
                                         
                                         if (cellData.merged) {
                                             cells[colIndex].classList.add('merged');
+                                            if (cellData.colspan) {
+                                                cells[colIndex].setAttribute('colspan', cellData.colspan);
+                                            }
+                                            if (cellData.rowspan) {
+                                                cells[colIndex].setAttribute('rowspan', cellData.rowspan);
+                                            }
                                         }
                                         if (cellData.hidden) {
                                             cells[colIndex].classList.add('hidden');
                                         }
+                                    }
+                                });
+                            }
+                        });
+                    }
+                    
+                    // Przywróć informacje o połączonych komórkach
+                    if (data.mergedCells) {
+                        mergedCells = new Map(data.mergedCells);
+                    }
+                } catch (e) {
+                    console.error('Błąd podczas ładowania danych:', e);
+                }
+            }
+        }
+        
+        // Inicjalizuj po załadowaniu strony
+        document.addEventListener('DOMContentLoaded', () => {
+            initSpreadsheet();
+            loadSpreadsheet();
+        });
+        
+        // Autosave co 10 sekund w trybie admin (bez powiadomień)
+        setInterval(() => {
+            if (isAdminMode) {
+                const data = [];
+                const rows = document.querySelectorAll('#spreadsheetBody tr');
+                
+                rows.forEach(row => {
+                    const rowData = [];
+                    const cells = row.querySelectorAll('.cell');
+                    cells.forEach(cell => {
+                        rowData.push({
+                            text: cell.textContent,
+                            style: {
+                                backgroundColor: cell.style.backgroundColor,
+                                color: cell.style.color,
+                                fontWeight: cell.style.fontWeight,
+                                fontStyle: cell.style.fontStyle,
+                                textDecoration: cell.style.textDecoration,
+                                fontSize: cell.style.fontSize
+                            },
+                            merged: cell.classList.contains('merged'),
+                            hidden: cell.classList.contains('hidden'),
+                            colspan: cell.getAttribute('colspan'),
+                            rowspan: cell.getAttribute('rowspan')
+                        });
+                    });
+                    data.push(rowData);
+                });
+                
+                const saveData = {
+                    cells: data,
+                    mergedCells: Array.from(mergedCells.entries())
+                };
+                const dataStorage = {};
+                dataStorage['csStatsSpreadsheet'] = JSON.stringify(saveData);
+            }
+        }, 10000);
+    </script>
+</body>
+</html>
