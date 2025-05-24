@@ -16,6 +16,7 @@
         /* General body style for verification screen */
         body.verifying {
             overflow: hidden; /* Prevent scrolling while verifying */
+            margin: 0; /* Ensure no default margin interferes with full-screen overlay */
         }
 
         /* Verification Screen Overlay */
@@ -24,105 +25,127 @@
             top: 0;
             left: 0;
             width: 100%;
-            height: 100%;
-            background-color: #1a1a1d; /* Dark background */
-            /* Example of a subtle animated pattern (optional) */
-            /* background-image: linear-gradient(45deg, #2c2c30 25%, transparent 25%),
-                              linear-gradient(-45deg, #2c2c30 25%, transparent 25%),
-                              linear-gradient(45deg, transparent 75%, #2c2c30 75%),
-                              linear-gradient(-45deg, transparent 75%, #2c2c30 75%);
-            background-size: 20px 20px;
-            animation: movePattern 20s linear infinite; */
+            height: 100vh; /* Use vh for full viewport height */
+            background-color: #121215; /* Base dark background */
+            overflow: hidden; /* Hide parts of pseudo-elements that go outside */
             display: flex;
-            flex-direction: column; /* To stack message and Turnstile */
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 9999; /* Make sure it's on top */
+            z-index: 9999;
             opacity: 1;
             transition: opacity 0.5s ease-out;
         }
 
         #verification-overlay.hidden {
             opacity: 0;
-            pointer-events: none; /* Allow interaction with content below after hiding */
+            pointer-events: none;
         }
 
-        /* Optional: Message on verification screen */
+        /* STYLISH BACKGROUND STRIPES */
+        #verification-overlay::before,
+        #verification-overlay::after {
+            content: '';
+            position: absolute;
+            z-index: -1; /* Behind the verification message and Turnstile */
+            opacity: 0.08; /* Subtle opacity for the stripes */
+        }
+
+        /* Common style for stripes */
+        .stripe {
+            position: absolute;
+            background-color: #2a2a30; /* Darker stripe color */
+            transform-origin: top right;
+            transform: skewX(-30deg) translateX(50%); /* Initial skew and position */
+            border-radius: 20px; /* Rounded ends */
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        }
+
+
+        /* We'll create multiple stripes using a loop or by defining them individually.
+           For simplicity here, I'll define a few. You can generate more with JS or SASS.
+           Alternatively, a repeating radial or conic gradient could be explored, but
+           individual elements give more control over rounding and exact placement.
+        */
+
+        /* Let's use a pseudo-element to create a large diagonal shape first, then refine */
+        #verification-overlay::before {
+            content: '';
+            position: absolute;
+            top: -50%; /* Start off-screen */
+            right: -50%; /* Start off-screen */
+            width: 200%; /* Large enough to cover diagonally */
+            height: 200%;
+            /* background: repeating-linear-gradient(
+                -55deg, /* Angle from top-right to bottom-left-ish */
+                /* #1a1a1d, /* Base color */
+                /* #1a1a1d 30px, */
+                /* #252528 30px, /* Stripe color */
+                /* #252528 60px  /* Stripe color + width */
+            /* ); */
+            /* More advanced approach with conic-gradient for curved stripes (complex) */
+            /* Or simpler with multiple skewed divs */
+            background: 
+                /* Stripe 1 */
+                linear-gradient(to bottom left, transparent 49.5%, #202025 50%, #202025 51.5%, transparent 52%) 100% 0% / 60px 100% no-repeat,
+                /* Stripe 2 */
+                linear-gradient(to bottom left, transparent 49.5%, #202025 50%, #202025 51.5%, transparent 52%) 80% -20% / 70px 120% no-repeat, /* Offset and larger */
+                /* Stripe 3 */
+                linear-gradient(to bottom left, transparent 49.5%, #1c1c21 50%, #1c1c21 51.5%, transparent 52%) 60% -40% / 50px 140% no-repeat; /* Further offset */
+
+            transform: rotate(25deg); /* Rotate the whole pattern */
+            opacity: 0.1; /* Make it very subtle */
+            z-index: 0; /* Behind content but above base background */
+        }
+        
+        /* This is a very simplified attempt. True rounded stripes descending like that
+           are complex with pure CSS. Often this is achieved with SVG or carefully
+           positioned and rotated divs. */
+
+        /* Let's try a different approach with individual pseudo-elements for more control if needed,
+           or by dynamically adding divs. For now, the above gradient is a starting point. */
+
+
+        /* Verification Message and Turnstile - ensure they are above the background pseudo-elements */
         #verification-message {
             color: #c7c7c7;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             font-size: 18px;
             margin-bottom: 25px;
             text-align: center;
+            position: relative; /* To ensure it's above pseudo-elements */
+            z-index: 1;
         }
 
-        /* Turnstile container specific to verification screen */
         #turnstile-verification-widget {
-            /* Styles to center the widget if needed, Turnstile often centers itself */
+            position: relative; /* To ensure it's above pseudo-elements */
+            z-index: 1;
         }
 
 
         /* Main content wrapper - hidden initially */
         #main-content-wrapper {
-            display: none; /* Hidden by default */
+            display: none;
         }
 
 
-        /* Pickems button styles (unchanged from your version) */
-        .pickems-button-container {
-            text-align: center;
-            margin-top: 25px;
-            margin-bottom: 20px;
-        }
-        .pickems-btn {
-            display: inline-block;
-            padding: 12px 30px;
-            background-color: #2d2d2d;
-            color: #e0e0e0;
-            text-decoration: none;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 16px;
-            font-weight: 600;
-            border-radius: 8px;
-            border: 1px solid #1a1a1a;
-            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out, box-shadow 0.2s ease-in-out;
-            cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-        }
-        .pickems-btn:hover, .pickems-btn:focus {
-            background-color: #3f3f3f;
-            color: #ffffff;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-        }
-        .pickems-btn:active {
-            background-color: #1c1c1c;
-            transform: translateY(0px);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-        }
-
-        /* Your existing .container styles for main content */
-        .container {
-            text-align: center;
-        }
-
-        /* Optional animation for pattern */
-        /* @keyframes movePattern {
-            0% { background-position: 0 0; }
-            100% { background-position: 40px 40px; }
-        } */
+        /* Pickems button styles (unchanged) */
+        .pickems-button-container { text-align: center; margin-top: 25px; margin-bottom: 20px; }
+        .pickems-btn { display: inline-block; padding: 12px 30px; background-color: #2d2d2d; color: #e0e0e0; text-decoration: none; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 16px; font-weight: 600; border-radius: 8px; border: 1px solid #1a1a1a; transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out, box-shadow 0.2s ease-in-out; cursor: pointer; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); }
+        .pickems-btn:hover, .pickems-btn:focus { background-color: #3f3f3f; color: #ffffff; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4); }
+        .pickems-btn:active { background-color: #1c1c1c; transform: translateY(0px); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); }
+        .container { text-align: center; }
 
     </style>
-    <!-- 1. Add Cloudflare Turnstile script -->
     <script
         src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onloadTurnstileCallback"
         defer
     ></script>
 </head>
-<body class="verifying"> <!-- Add class to body initially -->
+<body class="verifying">
 
-    <!-- Verification Overlay -->
     <div id="verification-overlay">
+        <!-- Stripes will be created by ::before or ::after pseudo-elements -->
         <div id="verification-message">
             Please verify you are human to continue...
         </div>
@@ -131,7 +154,6 @@
         </div>
     </div>
 
-    <!-- Main Content Wrapper (initially hidden) -->
     <div id="main-content-wrapper">
         <div class="container">
             <h1 class="name-heading">Kam3l</h1>
@@ -140,26 +162,16 @@
                     <img src="emoji.png" alt="Rotating emoji" id="rotatingImage">
                 </div>
             </div>
-
             <div class="social-icons">
-                <a href="https://steamcommunity.com/profiles/76561199050578760" target="_blank" class="icon-link">
-                    <i class="fab fa-steam"></i>
-                </a>
-                <a href="https://x.com/Kam3l__" target="_blank" class="icon-link">
-                    <i class="fab fa-twitter"></i>
-                </a>
-                <a href="specs.html" class="icon-link">
-                    <i class="fas fa-desktop"></i>
-                </a>
+                <a href="https://steamcommunity.com/profiles/76561199050578760" target="_blank" class="icon-link"><i class="fab fa-steam"></i></a>
+                <a href="https://x.com/Kam3l__" target="_blank" class="icon-link"><i class="fab fa-twitter"></i></a>
+                <a href="specs.html" class="icon-link"><i class="fas fa-desktop"></i></a>
             </div>
-
             <div class="pickems-button-container">
-                <a href="http://www.kam3l.xyz/cs-pickems.html" class="pickems-btn">
-                    Pickems
-                </a>
+                <a href="http://www.kam3l.xyz/cs-pickems.html" class="pickems-btn">Pickems</a>
             </div>
-        </div> <!-- End of .container -->
-    </div> <!-- End of #main-content-wrapper -->
+        </div>
+    </div>
 
     <script src="script.js"></script>
 
@@ -169,24 +181,9 @@
 
         function onTurnstileSuccess(token) {
             console.log("Turnstile verification successful! Token:", token);
-            
-            // Hide verification overlay with a fade-out
-            if (verificationOverlay) {
-                verificationOverlay.classList.add('hidden');
-            }
-            
-            // Show main content
-            if (mainContentWrapper) {
-                mainContentWrapper.style.display = 'block'; // Or 'flex', 'grid' depending on your layout
-            }
-
-            // Remove verifying class from body to allow scrolling if needed
+            if (verificationOverlay) verificationOverlay.classList.add('hidden');
+            if (mainContentWrapper) mainContentWrapper.style.display = 'block';
             document.body.classList.remove('verifying');
-
-            // Optionally, remove the overlay from DOM after transition if you don't need it anymore
-            // setTimeout(() => {
-            //     if (verificationOverlay) verificationOverlay.remove();
-            // }, 500); // Match transition duration
         }
 
         function onTurnstileError(errorCode) {
@@ -195,17 +192,10 @@
             if (verificationMessage) {
                 verificationMessage.innerHTML = '<p style="color: #ff6b6b;">Verification error. Please try refreshing the page or contact support if the issue persists.</p>';
             }
-            // You might want to disable or hide the Turnstile widget itself or give retry options
         }
 
         function onTurnstileExpired() {
-            console.warn("Turnstile token has expired. The widget should attempt to refresh.");
-            // Reset UI if necessary, e.g., show overlay again if it was hidden by some other means
-            // document.body.classList.add('verifying');
-            // if (verificationOverlay) verificationOverlay.classList.remove('hidden');
-            // if (mainContentWrapper) mainContentWrapper.style.display = 'none';
-            // Turnstile widget usually tries to refresh automatically.
-            // You might want to update the message
+            console.warn("Turnstile token has expired.");
             const verificationMessage = document.getElementById('verification-message');
             if (verificationMessage) {
                  verificationMessage.textContent = 'Verification expired. Please re-verify.';
@@ -216,11 +206,11 @@
             const turnstileWidgetContainer = document.getElementById('turnstile-verification-widget');
             if (typeof turnstile !== 'undefined' && turnstileWidgetContainer) {
                 turnstile.render(turnstileWidgetContainer, {
-                    sitekey: '0x4AAAAAABeaX6IJ3KUXhOq1', // <-- IMPORTANT: Replace with your actual public site key!
+                    sitekey: '0x4AAAAAABeaX6IJ3KUXhOq1', // <-- Replace with your site key!
                     callback: onTurnstileSuccess,
                     'error-callback': onTurnstileError,
                     'expired-callback': onTurnstileExpired,
-                    theme: 'dark', // Keep dark theme for the dark overlay
+                    theme: 'dark',
                 });
             } else {
                 console.error('Turnstile API not loaded or widget container element not found.');
