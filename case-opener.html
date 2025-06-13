@@ -86,15 +86,25 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
+        // --- KONFIGURACJA SZANS ---
+        // WAŻNE: Ta konfiguracja MUSI być identyczna jak w pliku glorp-case.html,
+        // aby szanse w ekwipunku wyświetlały się poprawnie!
+        const USE_CUSTOM_CHANCES = true;
+        const CUSTOM_CHANCES = {
+            'Glorp-10.png':           65,
+            'Glorp-Jam-15.gif':       25,
+            'Bday-Glorp-30.gif':      9.5,
+            'Christmas-Glorp-45.png': 0.5
+        };
+        // ---------------------------------------------
+
         const FOLDER_PATH = '';
-        const COOKIE_NAME = 'glorpPlayerData_v8'; // New cookie version for new data structure
+        const COOKIE_NAME = 'glorpPlayerData_v8';
         const SECRET_KEY = 5;
 
-        // Data needs to be available on this page to calculate chances
         const itemFilenames = [ 'Glorp-10.png', 'Glorp-Jam-15.gif', 'Bday-Glorp-30.gif', 'Christmas-Glorp-45.png' ];
-        const GLORP_CASE_CUSTOM_CHANCES_KEY = 'glorpCaseCustomChances';
         
-        let playerData = { glorpies: 100, inventory: [] }; // Inventory items will now be objects: {filename: '...', locked: false}
+        let playerData = { glorpies: 100, inventory: [] };
         let caseItems = []; // To store items with their probabilities
 
         const balanceDisplay = document.getElementById('balance-display');
@@ -108,37 +118,28 @@
         const setCookie = (name, data, days) => { const encoded = encodeData(data); let d=new Date(); d.setTime(d.getTime()+(days*24*60*60*1000)); document.cookie = `${name}=${encoded};expires=${d.toUTCString()};path=/;SameSite=Lax`; };
         const getCookie = name => { const c=document.cookie.split(';').find(r=>r.trim().startsWith(name+'=')); return c ? decodeData(c.split('=')[1]) : null; };
 
-        // --- UTILITY FUNCTIONS ---
         const parseValue = f => parseInt((f.match(/(\d+)\.(png|gif)$/i) || [])[1] || 0, 10);
         const parseName = f => { const p = f.replace(/\.(png|gif)$/i, '').split('-'); p.pop(); return p.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '); };
         const formatGlorpies = n => n.toLocaleString('en-US') + ' glorpies';
 
         function initializeCaseItems() {
-            let customChances = {};
-            try {
-                const stored = localStorage.getItem(GLORP_CASE_CUSTOM_CHANCES_KEY);
-                if (stored) customChances = JSON.parse(stored);
-            } catch (e) {
-                console.error("Could not parse custom chances, using defaults.", e);
-            }
-
-            const hasCustomChances = Object.keys(customChances).length > 0;
-            let totalWeight = 0;
-
-            const itemsWithWeights = itemFilenames.map(f => {
-                const value = parseValue(f);
-                if (value === 0) return null;
-                const weight = hasCustomChances && customChances[f] !== undefined
-                    ? parseFloat(customChances[f])
-                    : (1 / value);
-                totalWeight += weight;
-                return { filename: f, name: parseName(f), value: value, weight: weight };
-            }).filter(Boolean);
-
-            if (totalWeight > 0) {
-                 caseItems = itemsWithWeights.map(item => ({
+            const itemsData = itemFilenames.map(f => ({
+                filename: f,
+                name: parseName(f),
+                value: parseValue(f)
+            })).filter(i => i.value > 0);
+            
+            if (USE_CUSTOM_CHANCES) {
+                caseItems = itemsData.map(item => ({
                     ...item,
-                    probability: (item.weight / totalWeight) * 100
+                    probability: CUSTOM_CHANCES[item.filename] || 0
+                }));
+            } else {
+                const itemsWithWeights = itemsData.map(item => ({ ...item, weight: 1 / item.value }));
+                const totalWeight = itemsWithWeights.reduce((sum, item) => sum + item.weight, 0);
+                caseItems = itemsWithWeights.map(item => ({
+                    ...item,
+                    probability: totalWeight > 0 ? (item.weight / totalWeight) * 100 : 0
                 }));
             }
         }
@@ -160,7 +161,7 @@
 
             inventoryGrid.innerHTML = playerData.inventory.map((item, index) => {
                 const itemDetails = caseItems.find(ci => ci.filename === item.filename);
-                if (!itemDetails) return ''; // Skip if item details not found
+                if (!itemDetails) return '';
 
                 const probability = itemDetails.probability;
                 const rarityClass = getRarityClass(probability);
@@ -183,16 +184,9 @@
         function loadPlayerData() {
             const savedData = getCookie(COOKIE_NAME);
             if (savedData) {
-                // Ensure new data structure is used
                 playerData = {
                     glorpies: savedData.glorpies || 0,
-                    inventory: (savedData.inventory || []).map(item => {
-                        // Compatibility check for old save format
-                        if (typeof item === 'string') {
-                            return { filename: item, locked: false };
-                        }
-                        return item;
-                    })
+                    inventory: (savedData.inventory || []).map(item => (typeof item === 'string') ? { filename: item, locked: false } : item)
                 };
             }
             updateUI();
@@ -209,7 +203,7 @@
             if (!item) return;
 
             if (e.target.classList.contains('sell-btn')) {
-                if (item.locked) return; // Should be disabled, but double check
+                if (item.locked) return;
                 const itemValue = parseValue(item.filename);
                 playerData.glorpies += itemValue;
                 playerData.inventory.splice(index, 1);
@@ -248,8 +242,7 @@
                 updateUI();
             }
         });
-
-        // Initialize everything
+        
         initializeCaseItems();
         loadPlayerData();
     });
