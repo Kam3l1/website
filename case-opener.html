@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Case Opener - Local Save</title>
+    <style>
+        :root {
+            --primary-bg: #1a1c20; --secondary-bg: #2a2d32; --text-color: #e0e0e0;
+            --accent-color: #4d88ff; --gold-color: #ffd700; --border-color: #444;
+            --danger-color: #e64c4c; --rarity-legendary: #ffd700; --rarity-epic: #da70d6;
+            --rarity-rare: #4d88ff; --rarity-common: #9d9d9d; --item-width: 150px; --item-height: 120px;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--primary-bg); color: var(--text-color); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { width: 100%; max-width: 1200px; }
+        header { text-align: center; margin-bottom: 20px; }
+        h1 { font-size: 2.5em; color: var(--accent-color); }
+        .btn { background-color: var(--accent-color); color: white; border: none; padding: 10px 20px; font-size: 1em; font-weight: bold; border-radius: 5px; cursor: pointer; transition: background-color 0.2s; text-decoration: none; display: inline-block; }
+        .btn:hover { background-color: #3a70e0; }
+        .btn:disabled { background-color: #555; cursor: not-allowed; }
+        .btn.danger { background-color: var(--danger-color); }
+        .btn.danger:hover { background-color: #c0392b; }
+        .section-title { font-size: 2em; color: var(--accent-color); border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 20px; }
+        .tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; border-bottom: 2px solid var(--border-color); }
+        .tab-btn { background-color: transparent; border: none; border-bottom: 3px solid transparent; color: var(--text-color); padding: 15px 25px; font-size: 1.2em; font-weight: bold; cursor: pointer; }
+        .tab-btn.active { color: var(--accent-color); border-bottom-color: var(--accent-color); }
+        .tab-pane { display: none; animation: fadeInContent 0.5s ease; }
+        .tab-pane.active { display: block; }
+        @keyframes fadeInContent { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        #case-selection-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+        .case-card { cursor: pointer; background-color: var(--secondary-bg); border-radius: 8px; border: 1px solid var(--border-color); text-align: center; padding: 20px; transition: transform 0.2s, box-shadow 0.2s; }
+        .case-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); }
+        .case-card img { max-width: 150px; height: 150px; object-fit: contain; pointer-events: none; }
+        .case-card h2 { margin: 15px 0 5px; font-size: 1.4em; }
+        .case-card .price { font-size: 1.1em; font-weight: bold; }
+        .case-card .price.free { color: #28a745; }
+        .case-card .price.paid { color: var(--gold-color); }
+        .inventory-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        #balance-display { font-size: 1.8em; font-weight: bold; color: var(--gold-color); }
+        #inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; background-color: var(--primary-bg); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); min-height: 150px; }
+        .inventory-item { position: relative; background-color: var(--secondary-bg); border: 2px solid var(--border-color); border-radius: 8px; padding: 10px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; }
+        .item-count { position: absolute; top: 5px; right: 5px; background-color: rgba(0,0,0,0.7); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.9em; font-weight: bold; }
+        .item-actions { display: flex; flex-direction: column; gap: 5px; }
+        .action-btn { background-color: #6c757d; color: white; border: none; padding: 8px 12px; font-size: 0.9em; border-radius: 5px; cursor: pointer; width: 100%; }
+        .sell-btn { background-color: #28a745; }
+        .sell-btn:disabled { background-color: #555; cursor: not-allowed; }
+        .lock-btn { background-color: var(--accent-color); }
+        .lock-btn.locked { background-color: #e64c4c; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.85); display: none; justify-content: center; align-items: center; z-index: 1000; flex-direction: column; }
+        #spinner-window { width: 90%; max-width: 1200px; height: var(--item-height); background-color: var(--primary-bg); border: 2px solid var(--border-color); border-radius: 5px; overflow: hidden; position: relative; margin-bottom: 20px; }
+        .spinner-marker { position: absolute; top: -2px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-top: 15px solid var(--accent-color); z-index: 10; }
+        #spinner-reel { display: flex; height: 100%; }
+        .spinner-item { width: var(--item-width); height: 100%; flex-shrink: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: var(--secondary-bg); box-sizing: border-box; border-right: 2px solid var(--primary-bg); }
+        .spinner-item img { max-width: 90%; max-height: 70%; object-fit: contain; }
+        .spinner-item .item-name { font-size: 0.8em; margin-top: 5px; }
+        .modal-content { background-color: var(--secondary-bg); padding: 30px; border-radius: 10px; text-align: center; border: 2px solid var(--accent-color); animation: fadeIn .5s; max-width: 90%; }
+        .modal-content img { max-width: 250px; height: 250px; object-fit: contain; margin-bottom: 20px; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+        .modal-content textarea { width:100%; height:150px; background:var(--primary-bg); color:var(--text-color); border:1px solid var(--border-color); margin-bottom:15px; box-sizing: border-box; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header><h1>Case Opener</h1></header>
+        <main>
+            <nav class="tabs">
+                <button class="tab-btn active" data-tab="cases">Cases</button>
+                <button class="tab-btn" data-tab="inventory">Inventory</button>
+                <button class="tab-btn" data-tab="save">Save Manager</button>
+            </nav>
+            <div class="tab-content-container">
+                <div id="cases-content" class="tab-pane active"><h2 class="section-title">Select a Case</h2><div id="case-selection-grid"></div></div>
+                <div id="inventory-content" class="tab-pane">
+                    <div class="inventory-header"><h2 class="section-title" style="margin-bottom:0;">Inventory</h2><div id="balance-display">0 glorpies</div></div>
+                    <div style="text-align: right; margin-bottom: 20px;"><button id="sell-all-btn" class="btn danger">Sell All Unlocked</button></div>
+                    <div id="inventory-grid"></div>
+                </div>
+                <div id="save-content" class="tab-pane">
+                    <h2 class="section-title">Save Management</h2>
+                    <p style="text-align: center; margin-bottom: 20px;">You can export your save to a file to move it to another device, or import a save.</p>
+                    <div style="display: flex; justify-content: center; gap: 15px;">
+                        <button id="export-btn" class="btn">Export Save</button>
+                        <button id="import-btn" class="btn">Import Save</button>
+                        <button id="reset-btn" class="btn danger">RESET ALL PROGRESS</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="spinner-modal" class="modal"><div class="spinner-window"><div class="spinner-marker"></div><div id="spinner-reel"></div></div></div>
+    <div id="result-modal" class="modal"><div class="modal-content"><h2>You've unboxed:</h2><h3 id="result-item-name"></h3><img id="result-item-img" src="" alt="Won Item"><p id="result-item-value"></p><button id="close-result-btn" class="btn" style="margin-top: 20px;">OK</button></div></div>
+    <div id="export-modal" class="modal"><div class="modal-content" style="width: 80%; max-width:600px;"><h2>Your Save Code</h2><p>Copy this code and save it in a safe place.</p><textarea id="export-code" readonly></textarea><button id="close-export-modal-btn" class="btn">Close</button></div></div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const SAVE_KEY = 'glorp_save_data_v2';
+        const SECRET_ENCRYPTION_KEY = 7;
+        const FOLDER_PATH = '';
+        const CASES = { 'glorp-case': { name: "Glorp Case", cost: 0, image: "case.png", odds: { 'Glorp-10.png': 34.36, 'Glorp-Jam-15.gif': 22.91, 'Bday-Glorp-30.gif': 11.45, 'Christmas-Glorp-45.png': 7.63, 'Glorpium-50.png': 6.87, 'Glorp-Cheer-50.gif': 6.87, 'Glorp-Feet-75.gif': 5.33, 'Rainbow-Glorp-100.gif': 4.58 }}, 'test-case': { name: "Test Case", cost: 500, image: "case.png", odds: { 'Test-Item-5000.png': 100 } } };
+        
+        let allItemFilenames = [];
+        for (const caseId in CASES) { allItemFilenames.push(...Object.keys(CASES[caseId].odds)); }
+        allItemFilenames = [...new Set(allItemFilenames)];
+        let caseItems = [];
+        let playerData = {};
+
+        const caseGrid = document.getElementById('case-selection-grid');
+        const balanceDisplay = document.getElementById('balance-display');
+        const inventoryGrid = document.getElementById('inventory-grid');
+        const sellAllBtn = document.getElementById('sell-all-btn');
+        const spinnerModal = document.getElementById('spinner-modal');
+        const spinnerReel = document.getElementById('spinner-reel');
+        const resultModal = document.getElementById('result-modal');
+        const exportModal = document.getElementById('export-modal');
+
+        const parseValue = f => parseInt((f.match(/(\d+)\.(png|gif)$/i) || [])[1] || 0, 10);
+        const parseName = f => { const p = f.replace(/\.(png|gif)$/i, '').split('-'); p.pop(); return p.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '); };
+        const formatGlorpies = n => (n || 0).toLocaleString('en-US') + ' glorpies';
+        const getRarityClass = p => { if (p <= 1) return 'rarity-legendary'; if (p <= 5) return 'rarity-epic'; if (p <= 20) return 'rarity-rare'; return 'rarity-common'; };
+
+        function encryptData(data) { try { let s=JSON.stringify(data),r='';for(let t=0;t<s.length;t++)r+=String.fromCharCode(s.charCodeAt(t)+SECRET_ENCRYPTION_KEY);return btoa(r)}catch(e){return''}}
+        function decryptData(e){try{let t=atob(e),r='';for(let o=0;o<t.length;o++)r+=String.fromCharCode(t.charCodeAt(o)-SECRET_ENCRYPTION_KEY);return JSON.parse(r)}catch(e){return null}}
+
+        function savePlayerData() { localStorage.setItem(SAVE_KEY, encryptData(playerData)); }
+        function loadPlayerData() {
+            const data = localStorage.getItem(SAVE_KEY);
+            playerData = data ? decryptData(data) : null;
+            if (!playerData) { playerData = { glorpies: 100, inventory: {} }; savePlayerData(); }
+        }
+        
+        function initializeGame() {
+            loadPlayerData();
+            caseItems = allItemFilenames.map(f => {
+                let p = 0; for (const c in CASES) { if (CASES[c].odds[f]) { p = CASES[c].odds[f]; break; } }
+                return { filename: f, name: parseName(f), value: parseValue(f), probability: p };
+            }).filter(i => i.value > 0);
+            renderUI();
+        }
+
+        function renderUI() {
+            caseGrid.innerHTML = '';
+            for (const id in CASES) {
+                const caseData = CASES[id];
+                const priceText = caseData.cost === 0 ? 'Free' : `${(caseData.cost).toLocaleString('en-US')} glorpies`;
+                const priceClass = caseData.cost === 0 ? 'free' : 'paid';
+                const card = document.createElement('div');
+                card.className = 'case-card';
+                card.dataset.caseId = id;
+                card.innerHTML = `<img src="${FOLDER_PATH}${caseData.image}" alt="${caseData.name}" style="${id === 'test-case' ? 'filter: hue-rotate(180deg);' : ''}"><h2>${caseData.name}</h2><p class="price ${priceClass}">${priceText}</p>`;
+                caseGrid.appendChild(card);
+            }
+            balanceDisplay.textContent = formatGlorpies(playerData.glorpies);
+            const inventoryKeys = Object.keys(playerData.inventory || {});
+            if (inventoryKeys.length === 0) {
+                inventoryGrid.innerHTML = '<p style="color:#888; text-align:center; grid-column: 1 / -1;">Your inventory is empty.</p>';
+            } else {
+                inventoryGrid.innerHTML = inventoryKeys.map(filename => {
+                    const itemData = playerData.inventory[filename];
+                    const details = caseItems.find(ci => ci.filename === filename); if (!details) return '';
+                    return `<div class="inventory-item ${getRarityClass(details.probability)} ${itemData.locked ? 'locked' : ''}"><div class="item-count">x${itemData.count}</div><img src="${FOLDER_PATH + details.filename}" alt="${details.name}"><p class="item-name">${details.name}</p><p class="item-value">${formatGlorpies(details.value)}</p><div class="item-actions"><button class="action-btn sell-btn" data-filename="${filename}" ${itemData.locked ? 'disabled' : ''}>Sell</button><button class="action-btn lock-btn ${itemData.locked ? 'locked' : ''}" data-filename="${filename}">${itemData.locked ? 'Unlock' : 'Lock'}</button></div></div>`;
+                }).join('');
+            }
+        }
+        
+        function openCase(caseId) {
+            const caseData = CASES[caseId];
+            if (playerData.glorpies < caseData.cost) { alert("You don't have enough glorpies!"); return; }
+            playerData.glorpies -= caseData.cost;
+            
+            let totalWeight = 0, itemsInCase = [];
+            for (const item in caseData.odds) { if (caseData.odds[item] > 0) { itemsInCase.push({filename: item, weight: caseData.odds[item]}); totalWeight += caseData.odds[item]; } }
+            
+            let random = Math.random() * totalWeight, wonItemFilename = '';
+            for (const item of itemsInCase) { random -= item.weight; if (random <= 0) { wonItemFilename = item.filename; break; } }
+            if (!wonItemFilename) return;
+
+            if (playerData.inventory[wonItemFilename]) { playerData.inventory[wonItemFilename].count++; }
+            else { playerData.inventory[wonItemFilename] = { count: 1, locked: false }; }
+            
+            savePlayerData();
+            runOpeningAnimation(wonItemFilename);
+        }
+
+        function runOpeningAnimation(wonItemFilename) {
+            const wonItem = caseItems.find(i => i.filename === wonItemFilename);
+            const reel = []; const REEL_LENGTH = 50, WINNING_INDEX = REEL_LENGTH - 5;
+            for (let i = 0; i < REEL_LENGTH; i++) { reel.push(i === WINNING_INDEX ? wonItem : caseItems[Math.floor(Math.random() * caseItems.length)]); }
+            spinnerReel.innerHTML = reel.map(item => `<div class="spinner-item"><img src="${FOLDER_PATH + item.filename}" alt="${item.name}"><div class="item-name">${item.name}</div></div>`).join('');
+            
+            spinnerModal.style.display = 'flex';
+            spinnerReel.style.transition = 'none'; spinnerReel.style.transform = 'translateX(0)';
+            spinnerReel.offsetHeight; 
+            const itemWidth = 150, windowCenter = document.querySelector('.spinner-window').offsetWidth / 2;
+            let targetPosition = -(WINNING_INDEX * itemWidth) + windowCenter - (itemWidth / 2) + (Math.random() - 0.5) * (itemWidth * 0.6);
+            spinnerReel.style.transition = 'transform 3.5s cubic-bezier(0.1, 0.6, 0.3, 1)';
+            spinnerReel.style.transform = `translateX(${targetPosition}px)`;
+            
+            setTimeout(() => {
+                spinnerModal.style.display = 'none';
+                document.getElementById('result-item-name').textContent = wonItem.name;
+                document.getElementById('result-item-img').src = FOLDER_PATH + wonItem.filename;
+                document.getElementById('result-item-value').textContent = `Value: ${formatGlorpies(wonItem.value)}`;
+                resultModal.style.display = 'flex';
+            }, 4000);
+        }
+
+        document.querySelectorAll('.tab-btn').forEach(button => button.addEventListener('click', () => { document.querySelectorAll('.tab-btn, .tab-pane').forEach(el => el.classList.remove('active')); button.classList.add('active'); document.getElementById(button.dataset.tab + '-content').classList.add('active'); renderUI(); }));
+        caseGrid.addEventListener('click', e => { if (e.target.closest('.case-card')) { openCase(e.target.closest('.case-card').dataset.caseId); } });
+        document.getElementById('close-result-btn').addEventListener('click', () => { resultModal.style.display = 'none'; renderUI(); });
+        document.getElementById('export-btn').addEventListener('click', () => { document.getElementById('export-code').value = localStorage.getItem(SAVE_KEY); exportModal.style.display = 'flex'; });
+        document.getElementById('close-export-modal-btn').addEventListener('click', () => { exportModal.style.display = 'none'; });
+        document.getElementById('import-btn').addEventListener('click', () => { const code=prompt("Paste your save code:"); if(code && decryptData(code) && confirm("This will overwrite your current save. Continue?")){localStorage.setItem(SAVE_KEY,code);window.location.reload()}});
+        document.getElementById('reset-btn').addEventListener('click', () => { if(confirm("ARE YOU SURE you want to ERASE ALL progress? This cannot be undone!")){localStorage.removeItem(SAVE_KEY);window.location.reload()}});
+        
+        inventoryGrid.addEventListener('click', e => {
+            const filename = e.target.dataset.filename; if (!filename) return;
+            const item = playerData.inventory[filename]; if (!item) return;
+            if (e.target.classList.contains('sell-btn')) {
+                if(item.locked) return;
+                let amount = prompt(`How many do you want to sell? (You have ${item.count})`, item.count);
+                amount = parseInt(amount); if(isNaN(amount) || amount <= 0 || amount > item.count) return;
+                playerData.glorpies += parseValue(filename) * amount;
+                item.count -= amount; if (item.count <= 0) delete playerData.inventory[filename];
+            } else if (e.target.classList.contains('lock-btn')) { item.locked = !item.locked; }
+            savePlayerData(); renderUI();
+        });
+
+        sellAllBtn.addEventListener('click', () => {
+            let totalValue=0, itemsSoldCount=0; const toSell=[];
+            for (const f in playerData.inventory){const i=playerData.inventory[f];if(!i.locked){totalValue+=parseValue(f)*i.count;itemsSoldCount+=i.count;toSell.push(f)}}
+            if(itemsSoldCount===0) return alert("No unlocked items to sell.");
+            if(confirm(`Sell ${itemsSoldCount} item(s) for ${formatGlorpies(totalValue).replace(' glorpies','')} glorpies?`)){playerData.glorpies+=totalValue;toSell.forEach(f=>delete playerData.inventory[f]);savePlayerData();renderUI()}
+        });
+        
+        initializeGame();
+    });
+    </script>
+</body>
+</html>
