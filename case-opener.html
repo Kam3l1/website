@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Case Opener - Select a Case</title>
+    <style>
+        :root {
+            --primary-bg: #1a1c20;
+            --secondary-bg: #2a2d32;
+            --text-color: #e0e0e0;
+            --accent-color: #4d88ff;
+            --gold-color: #ffd700;
+            --border-color: #444;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 900px;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        h1 {
+            font-size: 2.5em;
+            color: var(--accent-color);
+        }
+        #case-selection-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+            justify-items: center;
+        }
+        .case-card {
+            background-color: var(--secondary-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+            padding: 20px;
+            text-decoration: none;
+            color: var(--text-color);
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .case-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        .case-card img {
+            max-width: 150px;
+            height: 150px;
+            object-fit: contain;
+        }
+        .case-card h2 {
+            margin: 15px 0 5px;
+            font-size: 1.4em;
+        }
+        .case-card .price {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #28a745; /* Zielony kolor dla darmowej skrzynki */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Select a Case</h1>
+        </header>
+        <main>
+            <div id="case-selection-grid">
+                
+                <!-- Karta Skrzynki "Glorp Case" -->
+                <a href="glorp-case.html" class="case-card">
+                    <img src="case.png" alt="Glorp Case">
+                    <h2>Glorp Case</h2>
+                    <p class="price">Free</p>
+                </a>
+                
+                <!-- W PRZYSZŁOŚCI: Możesz skopiować i wkleić powyższy blok <a>, 
+                     aby dodać kolejną skrzynkę. Wystarczy zmienić href, src, nazwę i cenę. -->
+
+            </div>
+        </main>
+    </div>
+</body>
+</html>
