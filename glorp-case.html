@@ -1,127 +1,412 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Glorp Case</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      background: #121212;
-      color: #fff;
-      text-align: center;
-      padding: 20px;
-    }
-    .case {
-      width: 200px;
-      margin: 20px auto;
-      cursor: pointer;
-    }
-    .inventory, .balance {
-      margin-top: 40px;
-    }
-    img.item {
-      width: 100px;
-      margin: 10px;
-    }
-    button.sell {
-      margin-top: 5px;
-      display: block;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glorp Case Opener</title>
+    <style>
+        :root {
+            --primary-bg: #1a1c20;
+            --secondary-bg: #2a2d32;
+            --text-color: #e0e0e0;
+            --accent-color: #4d88ff;
+            --gold-color: #ffd700;
+            --border-color: #444;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--secondary-bg);
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            margin: 0;
+            color: var(--accent-color);
+        }
+
+        #balance-display {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: var(--gold-color);
+        }
+
+        .main-content {
+            text-align: center;
+            background-color: var(--secondary-bg);
+            padding: 30px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .case-container img {
+            max-width: 200px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out;
+        }
+        .case-container img:hover {
+            transform: scale(1.05);
+        }
+
+        #open-case-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        #open-case-btn:hover {
+            background-color: #3a70e0;
+        }
+        
+        #open-case-btn:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+
+        .inventory-section {
+            margin-top: 30px;
+        }
+
+        #inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 15px;
+            background-color: var(--secondary-bg);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            min-height: 150px;
+        }
+
+        .inventory-item {
+            background-color: var(--primary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .inventory-item img {
+            max-width: 80px;
+            height: 80px;
+            object-fit: contain;
+            margin: 0 auto 10px;
+        }
+        
+        .item-value {
+            font-size: 0.9em;
+            color: var(--gold-color);
+            margin-bottom: 10px;
+        }
+
+        .sell-btn {
+            background-color: #e64c4c;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            font-size: 0.9em;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+        }
+        .sell-btn:hover {
+            background-color: #c0392b;
+        }
+
+        #result-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: none; /* Initially hidden */
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .result-content {
+            background-color: var(--secondary-bg);
+            padding: 40px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid var(--accent-color);
+            animation: fadeIn 0.5s;
+        }
+        
+        .result-content h2 {
+            margin-top: 0;
+        }
+
+        .result-content img {
+            max-width: 250px;
+            margin-bottom: 20px;
+        }
+        
+        .result-content .item-value {
+            font-size: 1.2em;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+    </style>
 </head>
 <body>
-  <h1>Open a Glorp Case!</h1>
-  <p>Click the case below to get a random Glorp.</p>
-  <img src="glorp-case/case.png" alt="Glorp Case" class="case" onclick="openCase()">
 
-  <div class="balance">
-    <h2>Balance: <span id="balance">0</span> glorpies</h2>
-  </div>
+    <div class="container">
+        <header>
+            <h1>Glorp Case</h1>
+            <div id="balance-display">0 glorpies</div>
+        </header>
 
-  <div class="inventory">
-    <h2>Your Inventory</h2>
-    <div id="inventory"></div>
-  </div>
+        <div class="main-content">
+            <h2>Glorp Case (Free)</h2>
+            <div class="case-container">
+                <img src="glorp-case/case.png" alt="Glorp Case" id="case-image">
+            </div>
+            <button id="open-case-btn">Open Case</button>
+        </div>
 
-  <script>
-    const inventoryEl = document.getElementById('inventory');
-    const balanceEl = document.getElementById('balance');
+        <div class="inventory-section">
+            <h2>Inventory</h2>
+            <div id="inventory-grid">
+                <!-- Inventory items will be generated here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Result Modal -->
+    <div id="result-modal">
+        <div class="result-content">
+            <h2>You've got a new Glorp!</h2>
+            <img id="result-item-img" src="" alt="Won Item">
+            <div id="result-item-value" class="item-value"></div>
+            <p>Click anywhere to close.</p>
+        </div>
+    </div>
 
-    // Parse price from filename like: glorpkoler-150-000.png
-    function parsePriceFromName(name) {
-      const match = name.match(/-(\d+)-(\d+)/);
-      if (!match) return 0;
-      return parseInt(match[1] + match[2]);
-    }
 
-    // Simulated list of item filenames in glorp-case folder
-    const availableItems = [
-      'glorpkoler-15-00.png',
-      'glorpkoler-50-00.png',
-      'glorpkoler-150-000.png',
-      'glorpkoler-5-00.png'
-    ];
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
 
-    function getBalance() {
-      return parseInt(localStorage.getItem('glorpies') || '0');
-    }
-
-    function setBalance(val) {
-      localStorage.setItem('glorpies', val);
-      balanceEl.textContent = val;
-    }
-
-    function getInventory() {
-      return JSON.parse(localStorage.getItem('inventory') || '[]');
-    }
-
-    function saveInventory(inv) {
-      localStorage.setItem('inventory', JSON.stringify(inv));
-    }
-
-    function renderInventory() {
-      inventoryEl.innerHTML = '';
-      const inv = getInventory();
-      inv.forEach((item, i) => {
-        const div = document.createElement('div');
-        const img = document.createElement('img');
-        img.src = 'glorp-case/' + item.name;
-        img.alt = item.name;
-        img.className = 'item';
-
-        const btn = document.createElement('button');
-        btn.textContent = `Sell for ${item.price} glorpies`;
-        btn.className = 'sell';
-        btn.onclick = () => {
-          const newInv = getInventory();
-          newInv.splice(i, 1);
-          saveInventory(newInv);
-          setBalance(getBalance() + item.price);
-          renderInventory();
+        // --- CONFIGURATION ---
+        // IMPORTANT: Add all your item .png filenames from the 'glorp-case' folder here.
+        // The script CANNOT read the folder contents automatically due to browser security.
+        const possibleItems = [
+            'glorp-blue-10-00.png',
+            'glorp-green-25-00.png',
+            'glorp-red-100-00.png',
+            'glorp-gold-1000-00.png',
+            'glorp-shiny-50000-00.png'
+        ];
+        
+        const FOLDER_PATH = 'glorp-case/';
+        const COOKIE_NAME = 'glorpPlayerData';
+        
+        let playerData = {
+            glorpies: 100,
+            inventory: []
         };
 
-        div.appendChild(img);
-        div.appendChild(btn);
-        inventoryEl.appendChild(div);
-      });
-    }
+        // --- UI ELEMENTS ---
+        const balanceDisplay = document.getElementById('balance-display');
+        const openCaseBtn = document.getElementById('open-case-btn');
+        const inventoryGrid = document.getElementById('inventory-grid');
+        const resultModal = document.getElementById('result-modal');
+        const resultItemImg = document.getElementById('result-item-img');
+        const resultItemValue = document.getElementById('result-item-value');
 
-    function openCase() {
-      const randomFile = availableItems[Math.floor(Math.random() * availableItems.length)];
-      const price = parsePriceFromName(randomFile);
-      const newItem = { name: randomFile, price };
+        // --- COOKIE FUNCTIONS ---
+        function setCookie(name, value, days) {
+            let expires = "";
+            if (days) {
+                const date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                expires = "; expires=" + date.toUTCString();
+            }
+            document.cookie = name + "=" + (JSON.stringify(value) || "") + expires + "; path=/; SameSite=Lax";
+        }
 
-      const inv = getInventory();
-      inv.push(newItem);
-      saveInventory(inv);
-      alert(`You got ${randomFile}! Worth ${price} glorpies.`);
-      renderInventory();
-    }
+        function getCookie(name) {
+            const nameEQ = name + "=";
+            const ca = document.cookie.split(';');
+            for (let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) == 0) {
+                    try {
+                        return JSON.parse(c.substring(nameEQ.length, c.length));
+                    } catch(e) {
+                        return null;
+                    }
+                }
+            }
+            return null;
+        }
 
-    // Init
-    setBalance(getBalance());
-    renderInventory();
-  </script>
+        // --- CORE LOGIC ---
+        function loadPlayerData() {
+            const savedData = getCookie(COOKIE_NAME);
+            if (savedData) {
+                playerData = savedData;
+            }
+            updateUI();
+        }
+
+        function savePlayerData() {
+            setCookie(COOKIE_NAME, playerData, 365);
+        }
+
+        function parseValueFromFilename(filename) {
+            // Extracts value from format: name-VALUE-00.png
+            // Example: glorp-shiny-50000-00.png -> 50000
+            const regex = /-([\d-]+)-\d+\.png$/;
+            const match = filename.match(regex);
+            if (match && match[1]) {
+                const priceString = match[1].replace(/-/g, '');
+                return parseInt(priceString, 10);
+            }
+            return 0; // Default value if format is incorrect
+        }
+        
+        function formatGlorpies(amount) {
+            return amount.toLocaleString('en-US') + ' glorpies';
+        }
+
+        function updateUI() {
+            // Update balance
+            balanceDisplay.textContent = formatGlorpies(playerData.glorpies);
+
+            // Update inventory
+            inventoryGrid.innerHTML = '';
+            if (playerData.inventory.length === 0) {
+                inventoryGrid.innerHTML = '<p style="color: #888; text-align: center; width: 100%;">Your inventory is empty.</p>';
+            } else {
+                playerData.inventory.forEach((itemFilename, index) => {
+                    const itemValue = parseValueFromFilename(itemFilename);
+                    
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'inventory-item';
+
+                    const itemImg = document.createElement('img');
+                    itemImg.src = FOLDER_PATH + itemFilename;
+                    itemImg.alt = itemFilename.replace('.png', '');
+
+                    const valueP = document.createElement('p');
+                    valueP.className = 'item-value';
+                    valueP.textContent = formatGlorpies(itemValue);
+                    
+                    const sellBtn = document.createElement('button');
+                    sellBtn.className = 'sell-btn';
+                    sellBtn.textContent = 'Sell';
+                    sellBtn.dataset.index = index; // Store index for selling
+
+                    itemDiv.appendChild(itemImg);
+                    itemDiv.appendChild(valueP);
+                    itemDiv.appendChild(sellBtn);
+                    inventoryGrid.appendChild(itemDiv);
+                });
+            }
+        }
+        
+        function showResult(itemFilename) {
+            const itemValue = parseValueFromFilename(itemFilename);
+            resultItemImg.src = FOLDER_PATH + itemFilename;
+            resultItemValue.textContent = `Value: ${formatGlorpies(itemValue)}`;
+            resultModal.style.display = 'flex';
+        }
+
+        // --- EVENT LISTENERS ---
+        openCaseBtn.addEventListener('click', () => {
+            if (possibleItems.length === 0) {
+                alert('Error: No items configured to be opened.');
+                return;
+            }
+            
+            // Disable button during animation
+            openCaseBtn.disabled = true;
+
+            // Simple spin animation simulation
+            let spinCount = 0;
+            const caseImage = document.getElementById('case-image');
+            const spinInterval = setInterval(() => {
+                const randomItem = possibleItems[Math.floor(Math.random() * possibleItems.length)];
+                caseImage.src = FOLDER_PATH + randomItem;
+                spinCount++;
+                if (spinCount > 15) { // Stop after ~1.5 seconds
+                    clearInterval(spinInterval);
+                    
+                    // The "real" won item
+                    const wonItem = possibleItems[Math.floor(Math.random() * possibleItems.length)];
+                    caseImage.src = FOLDER_PATH + 'case.png'; // Reset case image
+                    
+                    playerData.inventory.push(wonItem);
+                    savePlayerData();
+                    updateUI();
+                    showResult(wonItem);
+                    openCaseBtn.disabled = false;
+                }
+            }, 100);
+        });
+
+        inventoryGrid.addEventListener('click', (e) => {
+            if (e.target.classList.contains('sell-btn')) {
+                const itemIndex = parseInt(e.target.dataset.index, 10);
+                const itemToSell = playerData.inventory[itemIndex];
+                
+                if (itemToSell) {
+                    const value = parseValueFromFilename(itemToSell);
+                    playerData.glorpies += value;
+                    playerData.inventory.splice(itemIndex, 1);
+                    
+                    savePlayerData();
+                    updateUI();
+                }
+            }
+        });
+        
+        resultModal.addEventListener('click', () => {
+            resultModal.style.display = 'none';
+        });
+
+        // --- INITIALIZATION ---
+        loadPlayerData();
+    });
+    </script>
 </body>
 </html>
