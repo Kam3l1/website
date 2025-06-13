@@ -130,6 +130,7 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
+        window.db = db; 
 
         const tabButtons = document.querySelectorAll('.tab-btn'), tabPanes = document.querySelectorAll('.tab-pane'), loginBtn = document.getElementById('login-btn'), logoutBtn = document.getElementById('logout-btn'), userInfoDiv = document.getElementById('user-info'), userNameSpan = document.getElementById('user-name'), caseGrid = document.getElementById('case-selection-grid'), balanceDisplay = document.getElementById('balance-display'), inventoryGrid = document.getElementById('inventory-grid'), sellAllBtn = document.getElementById('sell-all-btn'), leaderboardBody = document.getElementById('leaderboard-body');
         let currentUser = null;
