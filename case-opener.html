@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Case Opener - Menu & Inventory</title>
+    
+    <!-- SKRYPTY FIREBASE -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    
     <style>
         :root {
             --primary-bg: #1a1c20; --secondary-bg: #2a2d32; --text-color: #e0e0e0;
@@ -20,11 +26,17 @@
         h1 { font-size: 2.5em; color: var(--accent-color); }
         .section-title { font-size: 2em; color: var(--accent-color); border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 20px; }
         #case-selection-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; justify-items: center; margin-bottom: 40px; }
-        .case-card { background-color: var(--secondary-bg); border-radius: 8px; border: 1px solid var(--border-color); text-align: center; padding: 20px; text-decoration: none; color: var(--text-color); transition: transform 0.2s, box-shadow 0.2s; width: 100%; box-sizing: border-box; }
+        .case-card { background-color: var(--secondary-bg); border-radius: 8px; border: 1px solid var(--border-color); text-align: center; padding: 20px; text-decoration: none; color: var(--text-color); transition: transform 0.2s, box-shadow 0.2s, opacity 0.3s; width: 100%; box-sizing: border-box; }
         .case-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); }
         .case-card img { max-width: 150px; height: 150px; object-fit: contain; }
         .case-card h2 { margin: 15px 0 5px; font-size: 1.4em; }
         .case-card .price { font-size: 1.1em; font-weight: bold; color: #28a745; }
+
+        /* --- Style Logowania --- */
+        #auth-container { text-align: center; margin-bottom: 30px; }
+        #user-info { display: none; align-items: center; justify-content: center; gap: 15px; font-size: 1.1em; }
+        #user-name { font-weight: bold; }
+        #logout-btn { background-color:#dc3545; font-size: 0.9em; padding: 8px 15px; }
 
         /* --- Inventory Styles --- */
         .inventory-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
@@ -54,6 +66,13 @@
         .rarity-epic { box-shadow: 0 0 12px 2px var(--rarity-epic); border-color: var(--rarity-epic); }
         .rarity-rare { box-shadow: 0 0 10px 1px var(--rarity-rare); border-color: var(--rarity-rare); }
         .rarity-common { box-shadow: 0 0 8px 0px var(--rarity-common); border-color: var(--rarity-common); }
+
+        /* --- Leaderboard Styles --- */
+        .leaderboard-section { margin-top: 40px; }
+        #leaderboard-table { width: 100%; border-collapse: collapse; background-color: var(--secondary-bg); border-radius: 8px; overflow: hidden; }
+        #leaderboard-table th, #leaderboard-table td { padding: 15px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        #leaderboard-table th { background-color: var(--primary-bg); }
+        #leaderboard-table td:first-child { font-weight: bold; color: var(--accent-color); }
     </style>
 </head>
 <body>
@@ -61,7 +80,16 @@
         <header>
             <h1>Case Opener</h1>
         </header>
+
         <main>
+            <div id="auth-container">
+                <button id="login-btn" class="btn">Login with Google</button>
+                <div id="user-info">
+                    <span id="user-name"></span>
+                    <button id="logout-btn" class="btn">Logout</button>
+                </div>
+            </div>
+
             <h2 class="section-title">Select a Case</h2>
             <div id="case-selection-grid">
                 <a href="glorp-case.html" class="case-card">
@@ -81,123 +109,205 @@
                 </div>
                 <div id="inventory-grid"></div>
             </div>
+
+            <div class="leaderboard-section">
+                <h2 class="section-title">Leaderboard</h2>
+                <table id="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Player</th>
+                            <th>Glorpies</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body">
+                        <tr><td colspan="3" style="text-align: center;">Log in to see the leaderboard.</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </main>
     </div>
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // --- KONFIGURACJA SZANS ---
-        // WAŻNE: Ta konfiguracja MUSI być identyczna jak w pliku glorp-case.html,
-        // aby szanse w ekwipunku wyświetlały się poprawnie!
-        const USE_CUSTOM_CHANCES = true;
-        const CUSTOM_CHANCES = {
-            'Glorp-10.png':           34.36,
-            'Glorp-Jam-15.gif':       22.91,
-            'Bday-Glorp-30.gif':      11.45,
-            'Christmas-Glorp-45.png': 7.63,
-            'Glorpium-50.png':        6.87,
-            'Glorp-Cheer-50.gif':     6.87,
-            'Glorp-Feet-75.gif':      5.33,
-            'Rainbow-Glorp-100.gif':  4.58
+        // 1. Inicjalizacja Firebase
+        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // !!! WKLEJ TUTAJ SWÓJ WŁASNY OBIEKT firebaseConfig Z KONSOLI FIREBASE !!!
+        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        const firebaseConfig = {
+            apiKey: "AIzaSyCHbe8Wy43kw5yglmuvQ4RoU4-l9zlkl-w",
+            authDomain: "case-opener-login.firebaseapp.com",
+            projectId: "case-opener-login",
+            storageBucket: "case-opener-login.firebasestorage.app",
+            messagingSenderId: "763174924074",
+            appId: "1:763174924074:web:beeafe85f4f63c23cbb853"
         };
-        // ---------------------------------------------
 
-        const FOLDER_PATH = '';
-        const COOKIE_NAME = 'glorpPlayerData_v8';
-        const SECRET_KEY = 5;
+        // Inicjalizacja aplikacji Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-        const itemFilenames = [ 'Glorp-10.png', 'Glorp-Jam-15.gif', 'Bday-Glorp-30.gif', 'Christmas-Glorp-45.png', 'Glorpium-50.png', 'Glorp-Cheer-50.gif', 'Glorp-Feet-75.gif', 'Rainbow-Glorp-100.gif' ];
-        
-        let playerData = { glorpies: 100, inventory: [] };
-        let caseItems = []; // To store items with their probabilities
-
+        // Referencje do elementów UI
+        const loginBtn = document.getElementById('login-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const userInfoDiv = document.getElementById('user-info');
+        const userNameSpan = document.getElementById('user-name');
         const balanceDisplay = document.getElementById('balance-display');
         const inventoryGrid = document.getElementById('inventory-grid');
         const sellAllBtn = document.getElementById('sell-all-btn');
+        const caseLink = document.querySelector('#case-selection-grid a');
+        const leaderboardBody = document.getElementById('leaderboard-body');
 
-        // --- DATA ENCODING/DECODING (unchanged) ---
-        function encodeData(data) { try { let jsonString = JSON.stringify(data); let s = ''; for (let i=0; i<jsonString.length; i++) s+=String.fromCharCode(jsonString.charCodeAt(i)+SECRET_KEY); return btoa(s); } catch(e){return '';}}
-        function decodeData(encoded) { try { let s = atob(encoded); let j = ''; for (let i=0; i<s.length; i++) j+=String.fromCharCode(s.charCodeAt(i)-SECRET_KEY); return JSON.parse(j); } catch(e){return null;}}
-        
-        const setCookie = (name, data, days) => { const encoded = encodeData(data); let d=new Date(); d.setTime(d.getTime()+(days*24*60*60*1000)); document.cookie = `${name}=${encoded};expires=${d.toUTCString()};path=/;SameSite=Lax`; };
-        const getCookie = name => { const c=document.cookie.split(';').find(r=>r.trim().startsWith(name+'=')); return c ? decodeData(c.split('=')[1]) : null; };
+        let currentUser = null;
+        let playerData = { glorpies: 0, inventory: [], username: 'Guest' };
 
+        // --- KONFIGURACJA PRZEDMIOTÓW ---
+        const FOLDER_PATH = '';
+        const USE_CUSTOM_CHANCES = true;
+        const CUSTOM_CHANCES = {
+            'Glorp-10.png':           34.36, 'Glorp-Jam-15.gif':       22.91,
+            'Bday-Glorp-30.gif':      11.45, 'Christmas-Glorp-45.png': 7.63,
+            'Glorpium-50.png':        6.87,  'Glorp-Cheer-50.gif':     6.87,
+            'Glorp-Feet-75.gif':      5.33,  'Rainbow-Glorp-100.gif':  4.58
+        };
+        const itemFilenames = Object.keys(CUSTOM_CHANCES);
+        let caseItems = [];
+
+        // --- FUNKCJE POMOCNICZE ---
         const parseValue = f => parseInt((f.match(/(\d+)\.(png|gif)$/i) || [])[1] || 0, 10);
         const parseName = f => { const p = f.replace(/\.(png|gif)$/i, '').split('-'); p.pop(); return p.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '); };
-        const formatGlorpies = n => n.toLocaleString('en-US') + ' glorpies';
-
+        const formatGlorpies = n => (n || 0).toLocaleString('en-US') + ' glorpies';
+        
         function initializeCaseItems() {
-            const itemsData = itemFilenames.map(f => ({
-                filename: f,
-                name: parseName(f),
-                value: parseValue(f)
-            })).filter(i => i.value > 0);
-            
+            const itemsData = itemFilenames.map(f => ({ filename: f, name: parseName(f), value: parseValue(f) })).filter(i => i.value > 0);
             if (USE_CUSTOM_CHANCES) {
-                caseItems = itemsData.map(item => ({
-                    ...item,
-                    probability: CUSTOM_CHANCES[item.filename] || 0
-                }));
-            } else {
-                const itemsWithWeights = itemsData.map(item => ({ ...item, weight: 1 / item.value }));
-                const totalWeight = itemsWithWeights.reduce((sum, item) => sum + item.weight, 0);
-                caseItems = itemsWithWeights.map(item => ({
-                    ...item,
-                    probability: totalWeight > 0 ? (item.weight / totalWeight) * 100 : 0
-                }));
-            }
+                caseItems = itemsData.map(item => ({ ...item, probability: CUSTOM_CHANCES[item.filename] || 0 }));
+            } else { /* logika domyślna, jeśli potrzebna */ }
         }
         
         function getRarityClass(probability) {
-            if (probability <= 1) return 'rarity-legendary';
-            if (probability <= 5) return 'rarity-epic';
-            if (probability <= 20) return 'rarity-rare';
-            return 'rarity-common';
+            if (probability <= 1) return 'rarity-legendary'; if (probability <= 5) return 'rarity-epic';
+            if (probability <= 20) return 'rarity-rare'; return 'rarity-common';
         }
 
-        function updateUI() {
-            balanceDisplay.textContent = formatGlorpies(playerData.glorpies);
-            
-            if (playerData.inventory.length === 0) {
-                inventoryGrid.innerHTML = '<p style="color:#888; text-align:center; grid-column: 1 / -1;">Your inventory is empty. Open some cases!</p>';
-                return;
+        // --- GŁÓWNA LOGIKA APLIKACJI ---
+        initializeCaseItems();
+
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUser = user;
+                loginBtn.style.display = 'none';
+                userInfoDiv.style.display = 'flex';
+                caseLink.style.pointerEvents = 'auto';
+                caseLink.style.opacity = 1;
+
+                await loadPlayerData();
+                await loadLeaderboard();
+            } else {
+                currentUser = null;
+                loginBtn.style.display = 'block';
+                userInfoDiv.style.display = 'none';
+                caseLink.style.pointerEvents = 'none';
+                caseLink.style.opacity = 0.5;
+                playerData = { glorpies: 0, inventory: [], username: 'Guest' };
+                leaderboardBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Log in to see the leaderboard.</td></tr>';
+                updateUI();
             }
+        });
 
-            inventoryGrid.innerHTML = playerData.inventory.map((item, index) => {
-                const itemDetails = caseItems.find(ci => ci.filename === item.filename);
-                if (!itemDetails) return '';
+        loginBtn.addEventListener('click', async () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            try {
+                const result = await auth.signInWithPopup(provider);
+                const user = result.user;
+                const userDocRef = db.collection('users').doc(user.uid);
+                const userDoc = await userDocRef.get();
 
-                const probability = itemDetails.probability;
-                const rarityClass = getRarityClass(probability);
-                const probText = probability < 0.001 ? '<0.001%' : probability.toFixed(4) + '%';
+                if (!userDoc.exists) {
+                    let username = ''; let isUnique = false;
+                    while(!isUnique) {
+                        username = prompt("Welcome! Please choose your unique username (3-15 characters, no spaces):", user.displayName.split(' ')[0]);
+                        if (!username || username.length < 3 || username.length > 15 || /\s/.test(username)) {
+                            alert("Invalid username. It must be 3-15 characters long and contain no spaces.");
+                            continue;
+                        }
+                        const usersWithSameName = await db.collection('users').where('username_lowercase', '==', username.toLowerCase()).get();
+                        if (usersWithSameName.empty) { isUnique = true; } else { alert("This username is already taken. Please try another one."); }
+                    }
+                    
+                    await userDocRef.set({
+                        username: username, username_lowercase: username.toLowerCase(),
+                        email: user.email, glorpies: 100, inventory: [],
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+            } catch (error) { console.error("Login Error:", error); }
+        });
 
-                return `
-                    <div class="inventory-item ${rarityClass} ${item.locked ? 'locked' : ''}">
-                        <img src="${FOLDER_PATH + item.filename}" alt="${itemDetails.name}">
-                        <p class="item-name">${itemDetails.name}</p>
-                        <p class="item-chance">Drop Chance: ${probText}</p>
-                        <p class="item-value">${formatGlorpies(itemDetails.value)}</p>
-                        <div class="item-actions">
-                            <button class="action-btn sell-btn" data-index="${index}" ${item.locked ? 'disabled' : ''}>Sell</button>
-                            <button class="action-btn lock-btn ${item.locked ? 'locked' : ''}" data-index="${index}">${item.locked ? 'Unlock' : 'Lock'}</button>
-                        </div>
-                    </div>`;
-            }).join('');
-        }
+        logoutBtn.addEventListener('click', () => { auth.signOut(); });
 
-        function loadPlayerData() {
-            const savedData = getCookie(COOKIE_NAME);
-            if (savedData) {
-                playerData = {
-                    glorpies: savedData.glorpies || 0,
-                    inventory: (savedData.inventory || []).map(item => (typeof item === 'string') ? { filename: item, locked: false } : item)
-                };
+        async function loadPlayerData() {
+            if (!currentUser) return;
+            const userDocRef = db.collection('users').doc(currentUser.uid);
+            const doc = await userDocRef.get();
+            if (doc.exists) {
+                playerData = doc.data();
+                userNameSpan.textContent = `Welcome, ${playerData.username}!`;
             }
             updateUI();
         }
 
-        function savePlayerData() {
-            setCookie(COOKIE_NAME, playerData, 365);
+        async function savePlayerData() {
+            if (!currentUser) return;
+            const userDocRef = db.collection('users').doc(currentUser.uid);
+            try {
+                await userDocRef.update({
+                    glorpies: playerData.glorpies,
+                    inventory: playerData.inventory
+                });
+            } catch (error) { console.error("Error saving data:", error); }
+        }
+
+        async function loadLeaderboard() {
+            leaderboardBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Loading...</td></tr>';
+            try {
+                const snapshot = await db.collection('users').orderBy('glorpies', 'desc').limit(10).get();
+                if (snapshot.empty) {
+                    leaderboardBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">No players on the leaderboard yet.</td></tr>';
+                    return;
+                }
+                leaderboardBody.innerHTML = '';
+                let rank = 1;
+                snapshot.forEach(doc => {
+                    const user = doc.data();
+                    const isCurrentUser = currentUser && currentUser.uid === doc.id;
+                    const row = `<tr style="${isCurrentUser ? 'background-color: var(--accent-color); color: white;' : ''}">
+                        <td>#${rank}</td><td>${user.username}</td><td>${formatGlorpies(user.glorpies)}</td>
+                    </tr>`;
+                    leaderboardBody.innerHTML += row;
+                    rank++;
+                });
+            } catch (error) { console.error("Error loading leaderboard:", error); }
+        }
+
+        function updateUI() {
+            balanceDisplay.textContent = formatGlorpies(playerData.glorpies);
+            inventoryGrid.innerHTML = playerData.inventory.length === 0 ? '<p style="color:#888; text-align:center; grid-column: 1 / -1;">Your inventory is empty.</p>' :
+            playerData.inventory.map((item, index) => {
+                const itemDetails = caseItems.find(ci => ci.filename === item.filename);
+                if (!itemDetails) return '';
+                const prob = itemDetails.probability;
+                const rarityClass = getRarityClass(prob);
+                const probText = prob < 0.001 ? '<0.001%' : prob.toFixed(2) + '%';
+                return `<div class="inventory-item ${rarityClass} ${item.locked ? 'locked' : ''}">
+                    <img src="${FOLDER_PATH + item.filename}" alt="${itemDetails.name}"><p class="item-name">${itemDetails.name}</p>
+                    <p class="item-chance">Drop: ${probText}</p><p class="item-value">${formatGlorpies(itemDetails.value)}</p>
+                    <div class="item-actions">
+                        <button class="action-btn sell-btn" data-index="${index}" ${item.locked ? 'disabled' : ''}>Sell</button>
+                        <button class="action-btn lock-btn ${item.locked ? 'locked' : ''}" data-index="${index}">${item.locked ? 'Unlock' : 'Lock'}</button>
+                    </div></div>`;
+            }).join('');
         }
 
         inventoryGrid.addEventListener('click', e => {
@@ -208,47 +318,25 @@
 
             if (e.target.classList.contains('sell-btn')) {
                 if (item.locked) return;
-                const itemValue = parseValue(item.filename);
-                playerData.glorpies += itemValue;
+                playerData.glorpies += parseValue(item.filename);
                 playerData.inventory.splice(index, 1);
-            } 
-            else if (e.target.classList.contains('lock-btn')) {
+            } else if (e.target.classList.contains('lock-btn')) {
                 item.locked = !item.locked;
             }
-
-            savePlayerData();
-            updateUI();
+            savePlayerData(); updateUI();
         });
 
         sellAllBtn.addEventListener('click', () => {
             let totalValue = 0;
-            const itemsToKeep = [];
-            const itemsToSell = [];
-
-            playerData.inventory.forEach(item => {
-                if (item.locked) {
-                    itemsToKeep.push(item);
-                } else {
-                    itemsToSell.push(item);
-                    totalValue += parseValue(item.filename);
-                }
-            });
-
-            if (itemsToSell.length === 0) {
-                alert("No unlocked items to sell.");
-                return;
-            }
-
-            if (confirm(`Are you sure you want to sell ${itemsToSell.length} item(s) for ${formatGlorpies(totalValue)}?`)) {
+            const itemsToKeep = [], itemsToSell = [];
+            playerData.inventory.forEach(item => item.locked ? itemsToKeep.push(item) : (itemsToSell.push(item), totalValue += parseValue(item.filename)));
+            if (itemsToSell.length === 0) return alert("No unlocked items to sell.");
+            if (confirm(`Sell ${itemsToSell.length} item(s) for ${formatGlorpies(totalValue)}?`)) {
                 playerData.glorpies += totalValue;
                 playerData.inventory = itemsToKeep;
-                savePlayerData();
-                updateUI();
+                savePlayerData(); updateUI();
             }
         });
-        
-        initializeCaseItems();
-        loadPlayerData();
     });
     </script>
 </body>
