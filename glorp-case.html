@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Glorp Case Opener - Weighted Drops</title>
+    <title>Glorp Case Opener </title>
     <style>
         :root {
             --primary-bg: #1a1c20;
@@ -107,7 +107,8 @@
         <div class="main-content">
             <h2>Glorp Case (Free)</h2>
             <div class="case-container">
-                <img src="glorp-case/case.png" alt="Glorp Case" id="case-image">
+                <!-- ZMIANA TUTAJ: Usunięto 'glorp-case/' ze ścieżki -->
+                <img src="case.png" alt="Glorp Case" id="case-image">
             </div>
             <div class="button-group">
                 <button id="open-case-btn" class="btn">Open Case</button>
@@ -152,11 +153,10 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const FOLDER_PATH = 'glorp-case/';
-        const COOKIE_NAME = 'glorpPlayerData_v3';
+        // ZMIANA TUTAJ: Ścieżka jest teraz pusta, bo pliki są w tym samym folderze
+        const FOLDER_PATH = '';
+        const COOKIE_NAME = 'glorpPlayerData_v4'; // Zmieniona nazwa cookie, aby uniknąć konfliktów
 
-        // === TWOJA LISTA PLIKÓW ===
-        // Upewnij się, że nazwy tutaj są DOKŁADNIE takie same jak nazwy plików w folderze.
         const itemFilenames = [
             'Glorp-10.png',
             'Glorp-Jam-15.gif',
@@ -180,19 +180,11 @@
         const chancesTableBody = document.getElementById('chances-table-body');
 
         const parseValue = f => parseInt((f.match(/(\d+)\.(png|gif)$/i) || [])[1] || 0, 10);
-        const parseName = f => {
-            const parts = f.replace(/\.(png|gif)$/i, '').split('-');
-            parts.pop();
-            return parts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
-        };
+        const parseName = f => { const parts = f.replace(/\.(png|gif)$/i, '').split('-'); parts.pop(); return parts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' '); };
         const formatGlorpies = n => n.toLocaleString('en-US') + ' glorpies';
 
         function initializeCaseItems() {
-            const itemsWithWeights = itemFilenames.map(filename => {
-                const value = parseValue(filename);
-                if (value === 0) return null;
-                return { filename, name: parseName(filename), value, weight: 1 / value };
-            }).filter(Boolean);
+            const itemsWithWeights = itemFilenames.map(filename => { const value = parseValue(filename); if (value === 0) return null; return { filename, name: parseName(filename), value, weight: 1 / value }; }).filter(Boolean);
             totalWeight = itemsWithWeights.reduce((sum, item) => sum + item.weight, 0);
             caseItems = itemsWithWeights.map(item => ({ ...item, probability: (item.weight / totalWeight) * 100 }));
         }
@@ -200,22 +192,14 @@
         function selectWeightedItem() {
             const random = Math.random() * totalWeight;
             let currentWeight = 0;
-            for (const item of caseItems) {
-                currentWeight += item.weight;
-                if (random < currentWeight) return item;
-            }
+            for (const item of caseItems) { currentWeight += item.weight; if (random < currentWeight) return item; }
             return caseItems[caseItems.length - 1];
         }
 
         const setCookie = (name, val, days) => { let d = new Date(); d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000)); document.cookie = `${name}=${JSON.stringify(val)};expires=${d.toUTCString()};path=/;SameSite=Lax`; };
         const getCookie = name => { const c = document.cookie.split(';').find(row => row.trim().startsWith(name + '=')); if (c) try { return JSON.parse(c.split('=')[1]); } catch(e) { return null; } return null; };
 
-        function loadPlayerData() {
-            const savedData = getCookie(COOKIE_NAME);
-            if (savedData) playerData = savedData;
-            updateUI();
-        }
-
+        function loadPlayerData() { const savedData = getCookie(COOKIE_NAME); if (savedData) playerData = savedData; updateUI(); }
         function savePlayerData() { setCookie(COOKIE_NAME, playerData, 365); }
 
         function updateUI() {
@@ -230,38 +214,23 @@
             }
         }
         
-        function showResult(item) {
-            resultItemImg.src = FOLDER_PATH + item.filename;
-            resultItemName.textContent = item.name;
-            resultItemValue.textContent = `Value: ${formatGlorpies(item.value)}`;
-            resultModal.style.display = 'flex';
-        }
+        function showResult(item) { resultItemImg.src = FOLDER_PATH + item.filename; resultItemName.textContent = item.name; resultItemValue.textContent = `Value: ${formatGlorpies(item.value)}`; resultModal.style.display = 'flex'; }
         
         function populateChancesModal() {
             chancesTableBody.innerHTML = '';
             const sortedItems = [...caseItems].sort((a, b) => a.probability - b.probability);
-            sortedItems.forEach(item => {
-                const chance = item.probability < 0.001 ? '< 0.001%' : item.probability.toFixed(4) + '%';
-                chancesTableBody.innerHTML += `<tr><td><img src="${FOLDER_PATH}${item.filename}" alt="${item.name}"></td><td>${item.name}</td><td>${formatGlorpies(item.value)}</td><td>${chance}</td></tr>`;
-            });
+            sortedItems.forEach(item => { const chance = item.probability < 0.001 ? '< 0.001%' : item.probability.toFixed(4) + '%'; chancesTableBody.innerHTML += `<tr><td><img src="${FOLDER_PATH}${item.filename}" alt="${item.name}"></td><td>${item.name}</td><td>${formatGlorpies(item.value)}</td><td>${chance}</td></tr>`; });
         }
 
         openCaseBtn.addEventListener('click', () => {
             if (caseItems.length === 0) { alert('Error: No items configured.'); return; }
-            openCaseBtn.disabled = true;
-            let spinCount = 0;
-            const caseImage = document.getElementById('case-image');
+            openCaseBtn.disabled = true; let spinCount = 0; const caseImage = document.getElementById('case-image');
             const spinInterval = setInterval(() => {
                 caseImage.src = FOLDER_PATH + caseItems[Math.floor(Math.random() * caseItems.length)].filename;
                 if (++spinCount > 15) {
-                    clearInterval(spinInterval);
-                    const wonItem = selectWeightedItem();
-                    caseImage.src = FOLDER_PATH + 'case.png';
-                    playerData.inventory.push(wonItem.filename);
-                    savePlayerData();
-                    updateUI();
-                    showResult(wonItem);
-                    openCaseBtn.disabled = false;
+                    clearInterval(spinInterval); const wonItem = selectWeightedItem();
+                    caseImage.src = FOLDER_PATH + 'case.png'; playerData.inventory.push(wonItem.filename);
+                    savePlayerData(); updateUI(); showResult(wonItem); openCaseBtn.disabled = false;
                 }
             }, 100);
         });
@@ -270,12 +239,7 @@
             if (e.target.classList.contains('sell-btn')) {
                 const index = parseInt(e.target.dataset.index, 10);
                 const filename = playerData.inventory[index];
-                if (filename) {
-                    playerData.glorpies += parseValue(filename);
-                    playerData.inventory.splice(index, 1);
-                    savePlayerData();
-                    updateUI();
-                }
+                if (filename) { playerData.glorpies += parseValue(filename); playerData.inventory.splice(index, 1); savePlayerData(); updateUI(); }
             }
         });
         
