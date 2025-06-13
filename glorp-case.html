@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Glorp Case Opener.</title>
+    <title>Glorp Case Opener</title>
+    <!-- CSS (bez zmian) -->
     <style>
         :root {
             --primary-bg: #1a1c20; --secondary-bg: #2a2d32; --text-color: #e0e0e0;
@@ -52,30 +53,18 @@
     </style>
 </head>
 <body>
-
     <div class="container">
-        <header>
-            <h1>Glorp Case</h1> <!-- Możesz dynamicznie zmieniać tę nazwę w przyszłości -->
-            <div id="balance-display">0 glorpies</div>
-        </header>
-
+        <header><h1>Glorp Case</h1><div id="balance-display">0 glorpies</div></header>
         <div class="main-content">
-            <div class="case-container">
-                <img src="case.png" alt="Glorp Case" id="case-image">
-            </div>
+            <div class="case-container"><img src="case.png" alt="Glorp Case" id="case-image"></div>
             <div class="button-group">
-                <a href="case-opener.html" id="back-btn" class="btn">Back to Menu</a> <!-- NOWY PRZYCISK POWROTU -->
+                <a href="case-opener.html" id="back-btn" class="btn">Back to Menu</a>
                 <button id="open-case-btn" class="btn">Open Case (Free)</button>
                 <button id="show-chances-btn" class="btn">Show Chances</button>
             </div>
         </div>
-
-        <div class="inventory-section">
-            <h2>Inventory</h2>
-            <div id="inventory-grid"></div>
-        </div>
+        <div class="inventory-section"><h2>Inventory</h2><div id="inventory-grid"></div></div>
     </div>
-    
     <div id="spinner-modal" class="modal"><div class="spinner-window"><div class="spinner-marker"></div><div id="spinner-reel"></div></div></div>
     <div id="result-modal" class="modal"><div class="modal-content"><h2>You've unboxed:</h2><h3 id="result-item-name"></h3><img id="result-item-img" src="" alt="Won Item"><div id="result-item-value" class="item-value"></div><p>Click anywhere outside to close.</p></div></div>
     <div id="chances-modal" class="modal"><div class="modal-content"><span class="close-modal-btn" data-modal-id="chances-modal">×</span><h2>Case Drop Chances</h2><table id="chances-table"><tbody id="chances-table-body"></tbody></table></div></div>
@@ -83,16 +72,12 @@
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         const FOLDER_PATH = '';
-        const COOKIE_NAME = 'glorpPlayerData_v6'; // Używamy tej samej nazwy cookie co w menu
+        const COOKIE_NAME = 'glorpPlayerData_v7'; // Nowa wersja cookie!
+        const SECRET_KEY = 5; // Twój "sekretny" klucz. Możesz tu wpisać inną liczbę.
 
-        // Konfiguracja przedmiotów dla TEJ KONKRETNEJ skrzynki
-        const itemFilenames = [
-            'Glorp-10.png', 'Glorp-Jam-15.gif', 'Bday-Glorp-30.gif', 'Christmas-Glorp-45.png'
-        ];
-
+        const itemFilenames = [ 'Glorp-10.png', 'Glorp-Jam-15.gif', 'Bday-Glorp-30.gif', 'Christmas-Glorp-45.png' ];
         let playerData = { glorpies: 100, inventory: [] };
-        let caseItems = [];
-        let totalWeight = 0;
+        let caseItems = [], totalWeight = 0;
 
         const openCaseBtn = document.getElementById('open-case-btn');
         const balanceDisplay = document.getElementById('balance-display');
@@ -102,73 +87,76 @@
         const resultModal = document.getElementById('result-modal');
         const chancesModal = document.getElementById('chances-modal');
         
+        // --- NOWE FUNKCJE DO KODOWANIA/DEKODOWANIA DANYCH ---
+
+        function encodeData(data) {
+            try {
+                let jsonString = JSON.stringify(data);
+                let shiftedString = '';
+                for (let i = 0; i < jsonString.length; i++) {
+                    shiftedString += String.fromCharCode(jsonString.charCodeAt(i) + SECRET_KEY);
+                }
+                return btoa(shiftedString); // Kodowanie do Base64
+            } catch (e) {
+                console.error("Encoding failed:", e);
+                return '';
+            }
+        }
+
+        function decodeData(encodedString) {
+            try {
+                let shiftedString = atob(encodedString); // Dekodowanie z Base64
+                let jsonString = '';
+                for (let i = 0; i < shiftedString.length; i++) {
+                    jsonString += String.fromCharCode(shiftedString.charCodeAt(i) - SECRET_KEY);
+                }
+                return JSON.parse(jsonString);
+            } catch (e) {
+                console.error("Decoding failed, resetting data. Error:", e);
+                return null; // Zwróć null, jeśli dane są uszkodzone lub niepoprawne
+            }
+        }
+
+        // --- ZMODYFIKOWANE FUNKCJE COOKIE ---
+
+        const setCookie = (name, data, days) => {
+            const encodedData = encodeData(data); // Kodujemy dane przed zapisem
+            let d = new Date();
+            d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
+            document.cookie = `${name}=${encodedData};expires=${d.toUTCString()};path=/;SameSite=Lax`;
+        };
+        
+        const getCookie = name => {
+            const c = document.cookie.split(';').find(row => row.trim().startsWith(name + '='));
+            if (c) {
+                const encodedData = c.split('=')[1];
+                return decodeData(encodedData); // Dekodujemy dane po odczycie
+            }
+            return null;
+        };
+        
+        // --- Reszta kodu (drobne zmiany) ---
+        
         const parseValue = f => parseInt((f.match(/(\d+)\.(png|gif)$/i) || [])[1] || 0, 10);
         const parseName = f => { const parts = f.replace(/\.(png|gif)$/i, '').split('-'); parts.pop(); return parts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' '); };
         const formatGlorpies = n => n.toLocaleString('en-US') + ' glorpies';
 
-        function initializeCaseItems() {
-            const itemsWithWeights = itemFilenames.map(filename => { const value = parseValue(filename); if (value === 0) return null; return { filename, name: parseName(filename), value, weight: 1 / value }; }).filter(Boolean);
-            totalWeight = itemsWithWeights.reduce((sum, item) => sum + item.weight, 0);
-            caseItems = itemsWithWeights.map(item => ({ ...item, probability: (item.weight / totalWeight) * 100 }));
-        }
-
-        function selectWeightedItem() {
-            const random = Math.random() * totalWeight;
-            let currentWeight = 0;
-            for (const item of caseItems) { currentWeight += item.weight; if (random < currentWeight) return item; }
-            return caseItems[caseItems.length - 1];
-        }
-
-        const setCookie = (n, v, d) => { let e = new Date(); e.setTime(e.getTime() + (d * 864e5)); document.cookie = `${n}=${JSON.stringify(v)};expires=${e.toUTCString()};path=/;SameSite=Lax`; };
-        const getCookie = n => { const c = document.cookie.split(';').find(r => r.trim().startsWith(n + '=')); if(c) try { return JSON.parse(c.split('=')[1]); } catch(e){ return null; } return null; };
+        function initializeCaseItems() { /* ... bez zmian ... */ const itemsWithWeights = itemFilenames.map(f => { const v = parseValue(f); if (v === 0) return null; return { filename: f, name: parseName(f), value: v, weight: 1 / v }; }).filter(Boolean); totalWeight = itemsWithWeights.reduce((s, i) => s + i.weight, 0); caseItems = itemsWithWeights.map(i => ({ ...i, probability: (i.weight / totalWeight) * 100 })); }
+        function selectWeightedItem() { /* ... bez zmian ... */ const r = Math.random() * totalWeight; let cw = 0; for (const i of caseItems) { cw += i.weight; if (r < cw) return i; } return caseItems[caseItems.length - 1]; }
         
         function loadPlayerData() { const saved = getCookie(COOKIE_NAME); if (saved) playerData = saved; updateUI(); }
         function savePlayerData() { setCookie(COOKIE_NAME, playerData, 365); }
-        function updateUI() {
-            balanceDisplay.textContent = formatGlorpies(playerData.glorpies);
-            inventoryGrid.innerHTML = playerData.inventory.length === 0 ? '<p style="color: #888; text-align: center; width: 100%;">Your inventory is empty.</p>' : playerData.inventory.map((f, i) => `<div class="inventory-item"><img src="${FOLDER_PATH}${f}" alt="${parseName(f)}"><p class="item-name">${parseName(f)}</p><p class="item-value">${formatGlorpies(parseValue(f))}</p><button class="sell-btn" data-index="${i}">Sell</button></div>`).join('');
-        }
-        function showResult(item) {
-            document.getElementById('result-item-name').textContent = item.name;
-            document.getElementById('result-item-img').src = FOLDER_PATH + item.filename;
-            document.getElementById('result-item-value').textContent = `Value: ${formatGlorpies(item.value)}`;
-            resultModal.style.display = 'flex';
-        }
+        function updateUI() { balanceDisplay.textContent = formatGlorpies(playerData.glorpies); inventoryGrid.innerHTML = playerData.inventory.length === 0 ? '<p style="color:#888;text-align:center;width:100%;">Your inventory is empty.</p>' : playerData.inventory.map((f, i) => `<div class="inventory-item"><img src="${FOLDER_PATH+f}" alt="${parseName(f)}"><p class="item-name">${parseName(f)}</p><p class="item-value">${formatGlorpies(parseValue(f))}</p><button class="sell-btn" data-index="${i}">Sell</button></div>`).join(''); }
+        function showResult(item) { document.getElementById('result-item-name').textContent = item.name; document.getElementById('result-item-img').src = FOLDER_PATH + item.filename; document.getElementById('result-item-value').textContent = `Value: ${formatGlorpies(item.value)}`; resultModal.style.display = 'flex'; }
 
-        function runOpeningAnimation(wonItem) {
-            const reel = []; const REEL_LENGTH = 50; const WINNING_INDEX = REEL_LENGTH - 5;
-            for (let i = 0; i < REEL_LENGTH; i++) { reel.push(i === WINNING_INDEX ? wonItem : caseItems[Math.floor(Math.random() * caseItems.length)]); }
-            spinnerReel.innerHTML = reel.map(item => `<div class="spinner-item"><img src="${FOLDER_PATH}${item.filename}" alt="${item.name}"><div class="item-name">${item.name}</div></div>`).join('');
-            spinnerModal.style.display = 'flex';
-            spinnerReel.style.transition = 'none';
-            spinnerReel.style.transform = 'translateX(0)';
-            spinnerReel.offsetHeight; 
-            const itemWidth = 150; const windowCenter = document.querySelector('.spinner-window').offsetWidth / 2;
-            let targetPosition = -(WINNING_INDEX * itemWidth) + windowCenter - (itemWidth / 2) + (Math.random() - 0.5) * (itemWidth * 0.6);
-            spinnerReel.style.transition = 'transform 3.5s cubic-bezier(0.1, 0.6, 0.3, 1)';
-            spinnerReel.style.transform = `translateX(${targetPosition}px)`;
-            setTimeout(() => {
-                spinnerModal.style.display = 'none';
-                playerData.inventory.push(wonItem.filename);
-                savePlayerData();
-                updateUI();
-                showResult(wonItem);
-                openCaseBtn.disabled = false;
-            }, 4000);
-        }
+        function runOpeningAnimation(wonItem) { const reel = []; const REEL_LENGTH = 50, WINNING_INDEX = REEL_LENGTH - 5; for (let i=0; i<REEL_LENGTH; i++) { reel.push(i === WINNING_INDEX ? wonItem : caseItems[Math.floor(Math.random() * caseItems.length)]); } spinnerReel.innerHTML = reel.map(item => `<div class="spinner-item"><img src="${FOLDER_PATH+item.filename}" alt="${item.name}"><div class="item-name">${item.name}</div></div>`).join(''); spinnerModal.style.display = 'flex'; spinnerReel.style.transition = 'none'; spinnerReel.style.transform = 'translateX(0)'; spinnerReel.offsetHeight; const itemWidth=150, windowCenter=document.querySelector('.spinner-window').offsetWidth/2; let targetPosition = -(WINNING_INDEX*itemWidth) + windowCenter - (itemWidth/2) + (Math.random()-0.5)*(itemWidth*0.6); spinnerReel.style.transition = 'transform 3.5s cubic-bezier(0.1, 0.6, 0.3, 1)'; spinnerReel.style.transform = `translateX(${targetPosition}px)`; setTimeout(() => { spinnerModal.style.display='none'; playerData.inventory.push(wonItem.filename); savePlayerData(); updateUI(); showResult(wonItem); openCaseBtn.disabled=false; }, 4000); }
 
-        openCaseBtn.addEventListener('click', () => {
-            if (caseItems.length === 0) { alert('Error: No items configured.'); return; }
-            openCaseBtn.disabled = true;
-            const wonItem = selectWeightedItem();
-            runOpeningAnimation(wonItem);
-        });
-        
-        inventoryGrid.addEventListener('click', e => { if (e.target.classList.contains('sell-btn')) { const i = parseInt(e.target.dataset.index, 10); const f = playerData.inventory[i]; if(f){ playerData.glorpies += parseValue(f); playerData.inventory.splice(i, 1); savePlayerData(); updateUI(); } } });
+        openCaseBtn.addEventListener('click', () => { if (caseItems.length === 0) { alert('Error: No items configured.'); return; } openCaseBtn.disabled = true; const wonItem = selectWeightedItem(); runOpeningAnimation(wonItem); });
+        inventoryGrid.addEventListener('click', e => { if (e.target.classList.contains('sell-btn')) { const i=parseInt(e.target.dataset.index,10), f=playerData.inventory[i]; if(f){ playerData.glorpies += parseValue(f); playerData.inventory.splice(i,1); savePlayerData(); updateUI(); } } });
         document.getElementById('show-chances-btn').addEventListener('click', () => { chancesModal.style.display = 'flex'; });
-        document.querySelectorAll('.modal').forEach(m => { m.addEventListener('click', e => { if (e.target === m) m.style.display = 'none'; }); });
+        document.querySelectorAll('.modal').forEach(m => { m.addEventListener('click', e => { if(e.target===m) m.style.display='none'; }); });
         document.querySelectorAll('.close-modal-btn').forEach(b => { b.addEventListener('click', () => { document.getElementById(b.dataset.modalId).style.display = 'none'; }); });
-        function populateChancesModal() { const s = [...caseItems].sort((a,b)=>a.probability-b.probability); document.getElementById('chances-table-body').innerHTML = s.map(i=>`<tr><td><img src="${FOLDER_PATH+i.filename}" alt="${i.name}"></td><td>${i.name}</td><td>${formatGlorpies(i.value)}</td><td>${i.probability<0.001?'<0.001%':i.probability.toFixed(4)+'%'}</td></tr>`).join(''); }
+        function populateChancesModal() { const s=[...caseItems].sort((a,b)=>a.probability-b.probability); document.getElementById('chances-table-body').innerHTML = s.map(i=>`<tr><td><img src="${FOLDER_PATH+i.filename}" alt="${i.name}"></td><td>${i.name}</td><td>${formatGlorpies(i.value)}</td><td>${i.probability<0.001?'<0.001%':i.probability.toFixed(4)+'%'}</td></tr>`).join(''); }
 
         initializeCaseItems();
         populateChancesModal();
