@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Glorp Case Opener v2</title>
+    <title>Glorp Case Opener</title>
     <style>
         :root {
             --primary-bg: #1a1c20;
@@ -25,184 +25,82 @@
             align-items: center;
         }
 
-        .container {
-            width: 100%;
-            max-width: 900px;
-        }
+        .container { width: 100%; max-width: 900px; }
 
         header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: var(--secondary-bg);
-            padding: 10px 20px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            margin-bottom: 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            background-color: var(--secondary-bg); padding: 10px 20px; border-radius: 8px;
+            border: 1px solid var(--border-color); margin-bottom: 20px;
         }
 
-        h1 {
-            margin: 0;
-            color: var(--accent-color);
-        }
+        h1 { margin: 0; color: var(--accent-color); }
+        #balance-display { font-size: 1.5em; font-weight: bold; color: var(--gold-color); }
 
-        #balance-display {
-            font-size: 1.5em;
-            font-weight: bold;
-            color: var(--gold-color);
-        }
-
-        .main-content {
-            text-align: center;
-            background-color: var(--secondary-bg);
-            padding: 30px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-        }
-
-        .case-container img {
-            max-width: 200px;
-            height: 200px;
-            object-fit: contain;
-            margin-bottom: 20px;
-            cursor: pointer;
-            transition: transform 0.2s ease-in-out;
-        }
-        .case-container img:hover {
-            transform: scale(1.05);
-        }
-
-        #open-case-btn {
-            background-color: var(--accent-color);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 1.2em;
-            font-weight: bold;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        #open-case-btn:hover {
-            background-color: #3a70e0;
-        }
+        .main-content { text-align: center; background-color: var(--secondary-bg); padding: 30px; border-radius: 8px; border: 1px solid var(--border-color); }
+        .case-container img { max-width: 200px; height: 200px; object-fit: contain; margin-bottom: 20px; transition: transform 0.2s ease-in-out; }
+        .case-container img:hover { transform: scale(1.05); }
         
-        #open-case-btn:disabled {
-            background-color: #555;
-            cursor: not-allowed;
-        }
+        .button-group { display: flex; justify-content: center; gap: 15px; }
 
-        .inventory-section {
-            margin-top: 30px;
+        .btn {
+            color: white; border: none; padding: 15px 30px; font-size: 1.2em; font-weight: bold;
+            border-radius: 5px; cursor: pointer; transition: background-color 0.2s;
         }
+        #open-case-btn { background-color: var(--accent-color); }
+        #open-case-btn:hover { background-color: #3a70e0; }
+        #open-case-btn:disabled { background-color: #555; cursor: not-allowed; }
+        
+        #show-chances-btn { background-color: #6c757d; font-size: 1em; padding: 10px 20px;}
+        #show-chances-btn:hover { background-color: #5a6268; }
 
+        .inventory-section { margin-top: 30px; }
         #inventory-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-            gap: 15px;
-            background-color: var(--secondary-bg);
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            min-height: 150px;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px;
+            background-color: var(--secondary-bg); padding: 20px; border-radius: 8px;
+            border: 1px solid var(--border-color); min-height: 150px;
         }
 
         .inventory-item {
-            background-color: var(--primary-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 10px;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+            background-color: var(--primary-bg); border: 1px solid var(--border-color); border-radius: 8px;
+            padding: 10px; text-align: center; display: flex; flex-direction: column; justify-content: space-between;
         }
-
-        .inventory-item img {
-            max-width: 100px;
-            height: 80px;
-            object-fit: contain;
-            margin: 0 auto 10px;
-        }
-        
-        .item-name {
-            font-weight: bold;
-            font-size: 1em;
-            margin-bottom: 5px;
-            word-wrap: break-word;
-        }
-
-        .item-value {
-            font-size: 0.9em;
-            color: var(--gold-color);
-            margin-bottom: 10px;
-        }
-
+        .inventory-item img { max-width: 100px; height: 80px; object-fit: contain; margin: 0 auto 10px; }
+        .item-name { font-weight: bold; font-size: 1em; margin-bottom: 5px; word-wrap: break-word; }
+        .item-value { font-size: 0.9em; color: var(--gold-color); margin-bottom: 10px; }
         .sell-btn {
-            background-color: #e64c4c;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            font-size: 0.9em;
-            border-radius: 5px;
-            cursor: pointer;
-            width: 100%;
+            background-color: #e64c4c; color: white; border: none; padding: 8px 12px;
+            font-size: 0.9em; border-radius: 5px; cursor: pointer; width: 100%;
         }
-        .sell-btn:hover {
-            background-color: #c0392b;
-        }
+        .sell-btn:hover { background-color: #c0392b; }
 
-        #result-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            display: none; /* Initially hidden */
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
+        /* Modal Styles */
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.8); display: none;
+            justify-content: center; align-items: center; z-index: 1000;
         }
-
-        .result-content {
-            background-color: var(--secondary-bg);
-            padding: 40px;
-            border-radius: 10px;
-            text-align: center;
-            border: 2px solid var(--accent-color);
-            animation: fadeIn 0.5s;
+        .modal-content {
+            background-color: var(--secondary-bg); padding: 30px; border-radius: 10px;
+            text-align: center; border: 2px solid var(--accent-color);
+            animation: fadeIn 0.5s; max-height: 80vh; overflow-y: auto;
         }
+        .modal-content h2, .modal-content h3 { margin-top: 0; }
+        .modal-content img { max-width: 250px; height: 250px; object-fit: contain; margin-bottom: 20px; }
         
-        #result-item-name {
-            margin-top: 0;
-            font-size: 1.8em;
-        }
-
-        .result-content img {
-            max-width: 250px;
-            height: 250px;
-            object-fit: contain;
-            margin-bottom: 20px;
-        }
+        #chances-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        #chances-table th, #chances-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        #chances-table th { background-color: var(--primary-bg); }
+        #chances-table img { width: 40px; height: 40px; vertical-align: middle; margin-right: 10px;}
+        .close-modal-btn { position: absolute; top: 15px; right: 20px; font-size: 2em; color: #aaa; cursor: pointer; }
         
-        .result-content .item-value {
-            font-size: 1.2em;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.8); }
-            to { opacity: 1; transform: scale(1); }
-        }
-
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
     </style>
 </head>
 <body>
 
     <div class="container">
         <header>
-            <h1>Glorp Case v2</h1>
+            <h1>Glorp Case</h1>
             <div id="balance-display">0 glorpies</div>
         </header>
 
@@ -211,113 +109,140 @@
             <div class="case-container">
                 <img src="glorp-case/case.png" alt="Glorp Case" id="case-image">
             </div>
-            <button id="open-case-btn">Open Case</button>
+            <div class="button-group">
+                <button id="open-case-btn" class="btn">Open Case</button>
+                <button id="show-chances-btn" class="btn">Show Chances</button>
+            </div>
         </div>
 
         <div class="inventory-section">
             <h2>Inventory</h2>
-            <div id="inventory-grid">
-                <!-- Inventory items will be generated here -->
-            </div>
+            <div id="inventory-grid"></div>
         </div>
     </div>
     
     <!-- Result Modal -->
-    <div id="result-modal">
-        <div class="result-content">
+    <div id="result-modal" class="modal">
+        <div class="modal-content">
             <h2>You've unboxed:</h2>
             <h3 id="result-item-name"></h3>
             <img id="result-item-img" src="" alt="Won Item">
             <div id="result-item-value" class="item-value"></div>
-            <p>Click anywhere to close.</p>
+            <p>Click anywhere outside to close.</p>
+        </div>
+    </div>
+
+    <!-- Chances Modal -->
+    <div id="chances-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal-btn" data-modal-id="chances-modal">×</span>
+            <h2>Case Drop Chances</h2>
+            <p>Rarer items have a lower chance of being unboxed.</p>
+            <table id="chances-table">
+                <thead>
+                    <tr><th>Item</th><th>Name</th><th>Value</th><th>Chance</th></tr>
+                </thead>
+                <tbody id="chances-table-body">
+                    <!-- Chances will be populated by JS -->
+                </tbody>
+            </table>
         </div>
     </div>
 
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-
         // --- CONFIGURATION ---
         const FOLDER_PATH = 'glorp-case/';
-        const COOKIE_NAME = 'glorpPlayerData_v2';
+        const COOKIE_NAME = 'glorpPlayerData_v3';
 
-        // Add all your item .png and .gif filenames from 'glorp-case' folder here.
-        // Follow the format: 'name-with-hyphens-VALUE.extension'
-        const possibleItems = [
-            'glorp-blue-10.png',
-            'glorp-green-50.png',
-            'glorp-red-250.png',
-            'super-glorp-gold-1500.png',
-            'glorp-party-animated-10000.gif'
+        // IMPORTANT: Add all your item filenames here.
+        // The script CANNOT read your folder automatically due to browser security.
+        // It will automatically calculate value, name, and drop chances from this list.
+        const itemFilenames = [
+            'Glorp-10.png',
+            'Glorp-Jam-15.gif',
+            'Bday-Glorp-30.gif',
+            'Christmas-Glorp-45.png',
         ];
-        
-        let playerData = {
-            glorpies: 100,
-            inventory: []
-        };
+
+        // --- GLOBAL VARIABLES ---
+        let playerData = { glorpies: 100, inventory: [] };
+        let caseItems = [];
+        let totalWeight = 0;
 
         // --- UI ELEMENTS ---
         const balanceDisplay = document.getElementById('balance-display');
         const openCaseBtn = document.getElementById('open-case-btn');
+        const showChancesBtn = document.getElementById('show-chances-btn');
         const inventoryGrid = document.getElementById('inventory-grid');
+        
         const resultModal = document.getElementById('result-modal');
         const resultItemImg = document.getElementById('result-item-img');
         const resultItemName = document.getElementById('result-item-name');
         const resultItemValue = document.getElementById('result-item-value');
 
-        // --- PARSING FUNCTIONS ---
-        function parseValueFromFilename(filename) {
-            // Extracts value from format: name-VALUE.ext
-            const regex = /(\d+)\.(png|gif)$/i;
-            const match = filename.match(regex);
-            if (match && match[1]) {
-                return parseInt(match[1], 10);
-            }
-            return 0; // Fallback
-        }
-        
-        function parseNameFromFilename(filename) {
-            // Creates a display name: 'super-glorp-gold-1500.png' -> 'Super Glorp Gold'
-            const nameWithoutExt = filename.replace(/\.(png|gif)$/i, '');
-            const parts = nameWithoutExt.split('-');
-            parts.pop(); // Remove the value part
-            return parts.map(part => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
-        }
-        
-        function formatGlorpies(amount) {
-            return amount.toLocaleString('en-US') + ' glorpies';
+        const chancesModal = document.getElementById('chances-modal');
+        const chancesTableBody = document.getElementById('chances-table-body');
+
+        // --- PARSING & FORMATTING ---
+        const parseValue = f => parseInt((f.match(/(\d+)\.(png|gif)$/i) || [])[1] || 0, 10);
+        const parseName = f => {
+            const parts = f.replace(/\.(png|gif)$/i, '').split('-');
+            parts.pop();
+            return parts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+        };
+        const formatGlorpies = n => n.toLocaleString('en-US') + ' glorpies';
+
+        // --- WEIGHTED DROP LOGIC ---
+        function initializeCaseItems() {
+            const itemsWithWeights = itemFilenames.map(filename => {
+                const value = parseValue(filename);
+                if (value === 0) return null; // Ignore invalid items
+                return {
+                    filename,
+                    name: parseName(filename),
+                    value,
+                    // Weight is inversely proportional to value. Cheaper = higher weight.
+                    weight: 1 / value
+                };
+            }).filter(Boolean); // Remove nulls
+
+            totalWeight = itemsWithWeights.reduce((sum, item) => sum + item.weight, 0);
+
+            caseItems = itemsWithWeights.map(item => ({
+                ...item,
+                probability: (item.weight / totalWeight) * 100
+            }));
         }
 
-        // --- COOKIE FUNCTIONS ---
-        function setCookie(name, value, days) {
-            let expires = "";
-            if (days) {
-                const date = new Date();
-                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-                expires = "; expires=" + date.toUTCString();
-            }
-            document.cookie = name + "=" + (JSON.stringify(value) || "") + expires + "; path=/; SameSite=Lax";
-        }
-
-        function getCookie(name) {
-            const nameEQ = name + "=";
-            const ca = document.cookie.split(';');
-            for (let i = 0; i < ca.length; i++) {
-                let c = ca[i];
-                while (c.charAt(0) == ' ') c = c.substring(1, c.length);
-                if (c.indexOf(nameEQ) == 0) {
-                    try { return JSON.parse(c.substring(nameEQ.length, c.length)); } catch (e) { return null; }
+        function selectWeightedItem() {
+            const random = Math.random() * totalWeight;
+            let currentWeight = 0;
+            for (const item of caseItems) {
+                currentWeight += item.weight;
+                if (random < currentWeight) {
+                    return item;
                 }
             }
-            return null;
+            return caseItems[caseItems.length - 1]; // Fallback
         }
 
-        // --- CORE LOGIC ---
+        // --- UI & DATA MANAGEMENT ---
+        const setCookie = (name, val, days) => {
+            let d = new Date();
+            d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
+            document.cookie = `${name}=${JSON.stringify(val)};expires=${d.toUTCString()};path=/;SameSite=Lax`;
+        };
+        const getCookie = name => {
+            const c = document.cookie.split(';').find(row => row.trim().startsWith(name + '='));
+            if (c) try { return JSON.parse(c.split('=')[1]); } catch(e) { return null; }
+            return null;
+        };
+
         function loadPlayerData() {
             const savedData = getCookie(COOKIE_NAME);
-            if (savedData) {
-                playerData = savedData;
-            }
+            if (savedData) playerData = savedData;
             updateUI();
         }
 
@@ -327,77 +252,62 @@
 
         function updateUI() {
             balanceDisplay.textContent = formatGlorpies(playerData.glorpies);
-
             inventoryGrid.innerHTML = '';
             if (playerData.inventory.length === 0) {
                 inventoryGrid.innerHTML = '<p style="color: #888; text-align: center; width: 100%;">Your inventory is empty.</p>';
             } else {
-                playerData.inventory.forEach((itemFilename, index) => {
-                    const itemValue = parseValueFromFilename(itemFilename);
-                    const itemName = parseNameFromFilename(itemFilename);
-                    
-                    const itemDiv = document.createElement('div');
-                    itemDiv.className = 'inventory-item';
-
-                    const itemImg = document.createElement('img');
-                    itemImg.src = FOLDER_PATH + itemFilename;
-                    itemImg.alt = itemName;
-
-                    const nameP = document.createElement('p');
-                    nameP.className = 'item-name';
-                    nameP.textContent = itemName;
-
-                    const valueP = document.createElement('p');
-                    valueP.className = 'item-value';
-                    valueP.textContent = formatGlorpies(itemValue);
-                    
-                    const sellBtn = document.createElement('button');
-                    sellBtn.className = 'sell-btn';
-                    sellBtn.textContent = 'Sell';
-                    sellBtn.dataset.index = index;
-
-                    itemDiv.appendChild(itemImg);
-                    itemDiv.appendChild(nameP);
-                    itemDiv.appendChild(valueP);
-                    itemDiv.appendChild(sellBtn);
-                    inventoryGrid.appendChild(itemDiv);
+                playerData.inventory.forEach((filename, index) => {
+                    inventoryGrid.innerHTML += `
+                        <div class="inventory-item">
+                            <img src="${FOLDER_PATH}${filename}" alt="${parseName(filename)}">
+                            <p class="item-name">${parseName(filename)}</p>
+                            <p class="item-value">${formatGlorpies(parseValue(filename))}</p>
+                            <button class="sell-btn" data-index="${index}">Sell</button>
+                        </div>`;
                 });
             }
         }
         
-        function showResult(itemFilename) {
-            const itemValue = parseValueFromFilename(itemFilename);
-            const itemName = parseNameFromFilename(itemFilename);
-            
-            resultItemImg.src = FOLDER_PATH + itemFilename;
-            resultItemName.textContent = itemName;
-            resultItemValue.textContent = `Value: ${formatGlorpies(itemValue)}`;
-            
+        function showResult(item) {
+            resultItemImg.src = FOLDER_PATH + item.filename;
+            resultItemName.textContent = item.name;
+            resultItemValue.textContent = `Value: ${formatGlorpies(item.value)}`;
             resultModal.style.display = 'flex';
+        }
+        
+        function populateChancesModal() {
+            chancesTableBody.innerHTML = '';
+            const sortedItems = [...caseItems].sort((a, b) => a.probability - b.probability);
+            sortedItems.forEach(item => {
+                const chance = item.probability < 0.001 ? '< 0.001%' : item.probability.toFixed(4) + '%';
+                chancesTableBody.innerHTML += `
+                    <tr>
+                        <td><img src="${FOLDER_PATH}${item.filename}" alt="${item.name}"></td>
+                        <td>${item.name}</td>
+                        <td>${formatGlorpies(item.value)}</td>
+                        <td>${chance}</td>
+                    </tr>`;
+            });
         }
 
         // --- EVENT LISTENERS ---
         openCaseBtn.addEventListener('click', () => {
-            if (possibleItems.length === 0) {
-                alert('Error: No items configured. Please add items to the `possibleItems` array in the script.');
+            if (caseItems.length === 0) {
+                alert('Error: No items configured.');
                 return;
             }
-            
             openCaseBtn.disabled = true;
 
             let spinCount = 0;
             const caseImage = document.getElementById('case-image');
             const spinInterval = setInterval(() => {
-                const randomItem = possibleItems[Math.floor(Math.random() * possibleItems.length)];
-                caseImage.src = FOLDER_PATH + randomItem;
-                spinCount++;
-                if (spinCount > 15) { // Stop after ~1.5 seconds
+                caseImage.src = FOLDER_PATH + caseItems[Math.floor(Math.random() * caseItems.length)].filename;
+                if (++spinCount > 15) {
                     clearInterval(spinInterval);
+                    const wonItem = selectWeightedItem();
+                    caseImage.src = FOLDER_PATH + 'case.png';
                     
-                    const wonItem = possibleItems[Math.floor(Math.random() * possibleItems.length)];
-                    caseImage.src = FOLDER_PATH + 'case.png'; // Reset case image
-                    
-                    playerData.inventory.push(wonItem);
+                    playerData.inventory.push(wonItem.filename);
                     savePlayerData();
                     updateUI();
                     showResult(wonItem);
@@ -408,25 +318,39 @@
 
         inventoryGrid.addEventListener('click', (e) => {
             if (e.target.classList.contains('sell-btn')) {
-                const itemIndex = parseInt(e.target.dataset.index, 10);
-                const itemToSell = playerData.inventory[itemIndex];
-                
-                if (itemToSell) {
-                    const value = parseValueFromFilename(itemToSell);
-                    playerData.glorpies += value;
-                    playerData.inventory.splice(itemIndex, 1);
-                    
+                const index = parseInt(e.target.dataset.index, 10);
+                const filename = playerData.inventory[index];
+                if (filename) {
+                    playerData.glorpies += parseValue(filename);
+                    playerData.inventory.splice(index, 1);
                     savePlayerData();
                     updateUI();
                 }
             }
         });
         
-        resultModal.addEventListener('click', () => {
-            resultModal.style.display = 'none';
+        // Modal handling
+        showChancesBtn.addEventListener('click', () => {
+            chancesModal.style.display = 'flex';
+        });
+
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) { // Click on modal background
+                    modal.style.display = 'none';
+                }
+            });
+        });
+
+        document.querySelectorAll('.close-modal-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.getElementById(btn.dataset.modalId).style.display = 'none';
+            });
         });
 
         // --- INITIALIZATION ---
+        initializeCaseItems();
+        populateChancesModal();
         loadPlayerData();
     });
     </script>
