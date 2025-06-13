@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Case Opener</title>
+    
+    <!-- SKRYPTY FIREBASE -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    
+    <style>
+        :root {
+            --primary-bg: #1a1c20; --secondary-bg: #2a2d32; --text-color: #e0e0e0;
+            --accent-color: #4d88ff; --gold-color: #ffd700; --border-color: #444;
+            --item-width: 150px; --item-height: 120px;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--primary-bg); color: var(--text-color); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { width: 100%; max-width: 900px; }
+        header { display: flex; justify-content: space-between; align-items: center; background-color: var(--secondary-bg); padding: 10px 20px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px; }
+        h1 { margin: 0; color: var(--accent-color); }
+        #balance-display { font-size: 1.5em; font-weight: bold; color: var(--gold-color); }
+        .main-content { text-align: center; background-color: var(--secondary-bg); padding: 30px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px;}
+        .case-container img { max-width: 200px; height: 200px; object-fit: contain; margin-bottom: 20px; filter: hue-rotate(180deg); /* Prosty sposób na zmianę wyglądu skrzynki */ }
+        .button-group { display: flex; justify-content: center; align-items:center; gap: 15px; }
+        .btn { color: white; border: none; padding: 15px 30px; font-size: 1.2em; font-weight: bold; border-radius: 5px; cursor: pointer; transition: background-color 0.2s; text-decoration: none; display: inline-block; }
+        #open-case-btn { background-color: var(--accent-color); }
+        #open-case-btn:hover { background-color: #3a70e0; }
+        #open-case-btn:disabled { background-color: #555; cursor: not-allowed; }
+        #back-btn, #show-chances-btn { background-color: #6c757d; font-size: 1em; padding: 10px 20px;}
+        #back-btn:hover, #show-chances-btn:hover { background-color: #5a6268; }
+        
+        /* --- Style Modali (bez zmian) --- */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        #spinner-modal { background-color: rgba(0, 0, 0, 0.9); flex-direction: column; }
+        .spinner-window { width: 90%; max-width: 1200px; height: var(--item-height); background-color: var(--primary-bg); border: 2px solid var(--border-color); border-radius: 5px; overflow: hidden; position: relative; }
+        .spinner-marker { position: absolute; top: -2px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-top: 15px solid var(--accent-color); z-index: 10; }
+        #spinner-reel { display: flex; height: 100%; transition: transform 3.5s cubic-bezier(0.1, 0.6, 0.3, 1); }
+        .spinner-item { width: var(--item-width); height: 100%; flex-shrink: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: var(--secondary-bg); box-sizing: border-box; border-right: 2px solid var(--primary-bg); }
+        .spinner-item img { max-width: 90%; max-height: 70%; object-fit: contain; }
+        .spinner-item .item-name { font-size: 0.8em; margin-top: 5px; }
+        .modal-content { background-color: var(--secondary-bg); padding: 30px; border-radius: 10px; text-align: center; border: 2px solid var(--accent-color); animation: fadeIn 0.5s; max-height: 80vh; overflow-y: auto; position: relative; }
+        .modal-content h2, .modal-content h3 { margin-top: 0; }
+        .modal-content img { max-width: 250px; height: 250px; object-fit: contain; margin-bottom: 20px; }
+        #chances-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        #chances-table th, #chances-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        #chances-table img { width: 40px; height: 40px; vertical-align: middle; margin-right: 10px;}
+        .close-modal-btn { position: absolute; top: 15px; right: 20px; font-size: 2em; color: #aaa; cursor: pointer; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header><h1>Test Case</h1><div id="balance-display">Loading...</div></header>
+        <div class="main-content">
+            <div class="case-container"><img src="case.png" alt="Test Case" id="case-image"></div>
+            <div class="button-group">
+                <a href="case-opener.html" id="back-btn" class="btn">Back to Menu</a>
+                <button id="open-case-btn" class="btn">Open Case</button>
+                <button id="show-chances-btn" class="btn">Show Chances</button>
+            </div>
+        </div>
+    </div>
+    <div id="spinner-modal" class="modal"><div class="spinner-window"><div class="spinner-marker"></div><div id="spinner-reel"></div></div></div>
+    <div id="result-modal" class="modal"><div class="modal-content"><h2>You've unboxed:</h2><h3 id="result-item-name"></h3><img id="result-item-img" src="" alt="Won Item"><div id="result-item-value" class="item-value"></div><p>Click anywhere outside to close.</p></div></div>
+    <div id="chances-modal" class="modal"><div class="modal-content"><span class="close-modal-btn" data-modal-id="chances-modal">×</span><h2>Case Drop Chances</h2><table id="chances-table"><tbody id="chances-table-body"></tbody></table></div></div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- KONFIGURACJA SKRZYNKI ---
+        const CASE_COST = 500; // <<< NOWOŚĆ: Cena za otwarcie tej skrzynki
+        const CUSTOM_CHANCES = {
+            'Test-Item-5000.png': 100, // Nowy item, 100% szans
+             // stare itemy mają 0%, więc nie zostaną wylosowane
+            'Glorp-10.png':           0, 
+            'Glorp-Jam-15.gif':       0,
+            'Bday-Glorp-30.gif':      0,
+            'Christmas-Glorp-45.png': 0,
+            'Glorpium-50.png':        0,
+            'Glorp-Cheer-50.gif':     0,
+            'Glorp-Feet-75.gif':      0,
+            'Rainbow-Glorp-100.gif':  0
+        };
+        // ------------------------------------
+
+        // 1. Inicjalizacja Firebase (wklej tutaj swoją konfigurację)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCHbe8Wy43kw5yglmuvQ4RoU4-l9zlkl-w",
+            authDomain: "case-opener-login.firebaseapp.com",
+            projectId: "case-opener-login",
+            storageBucket: "case-opener-login.appspot.com",
+            messagingSenderId: "763174924074",
+            appId: "1:763174924074:web:beeafe85f4f63c23cbb853"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Elementy UI
+        const openCaseBtn = document.getElementById('open-case-btn');
+        const balanceDisplay = document.getElementById('balance-display');
+        const spinnerModal = document.getElementById('spinner-modal');
+        const spinnerReel = document.getElementById('spinner-reel');
+        const resultModal = document.getElementById('result-modal');
+        const chancesModal = document.getElementById('chances-modal');
+
+        let currentUser = null;
+        let currentBalance = 0; // <<< NOWOŚĆ: Przechowujemy aktualne saldo
+        let unsubscribeBalanceListener = null;
+
+        // --- KONFIGURACJA PRZEDMIOTÓW ---
+        const FOLDER_PATH = '';
+        const itemFilenames = Object.keys(CUSTOM_CHANCES);
+        let caseItems = [], totalWeight = 0;
+
+        // --- FUNKCJE POMOCNICZE (bez zmian) ---
+        const parseValue = f => parseInt((f.match(/(\d+)\.(png|gif)$/i) || [])[1] || 0, 10);
+        const parseName = f => { const p = f.replace(/\.(png|gif)$/i, '').split('-'); p.pop(); return p.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '); };
+        const formatGlorpies = n => (n || 0).toLocaleString('en-US'); // usunięto "glorpies" dla czystości
+
+        function initializeCaseItems() {
+            const itemsData = itemFilenames.map(f => ({ filename: f, name: parseName(f), value: parseValue(f) })).filter(i => i.value > 0);
+            totalWeight = 100; // Suma szans to 100
+            caseItems = itemsData.map(item => ({ ...item, probability: CUSTOM_CHANCES[item.filename] || 0, weight: CUSTOM_CHANCES[item.filename] || 0 }));
+            populateChancesModal();
+        }
+
+        function selectWeightedItem() {
+            const r = Math.random() * totalWeight; 
+            let cumulativeWeight = 0;
+            for (const item of caseItems) {
+                cumulativeWeight += item.weight; if (r < cumulativeWeight) return item;
+            }
+            return caseItems.filter(i => i.weight > 0)[0] || caseItems[0];
+        }
+
+        // --- GŁÓWNA LOGIKA APLIKACJI ---
+        initializeCaseItems();
+        openCaseBtn.textContent = `Open Case (${formatGlorpies(CASE_COST)} glorpies)`;
+
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                currentUser = user;
+                const userDocRef = db.collection('users').doc(currentUser.uid);
+                unsubscribeBalanceListener = userDocRef.onSnapshot((doc) => {
+                    if (doc.exists) {
+                        currentBalance = doc.data().glorpies;
+                        balanceDisplay.textContent = `${formatGlorpies(currentBalance)} glorpies`;
+                        // Sprawdź, czy stać gracza na skrzynkę
+                        openCaseBtn.disabled = currentBalance < CASE_COST;
+                    }
+                });
+            } else {
+                currentUser = null;
+                if (unsubscribeBalanceListener) unsubscribeBalanceListener();
+                openCaseBtn.disabled = true;
+                openCaseBtn.textContent = 'You must be logged in';
+                balanceDisplay.textContent = 'Not logged in';
+                setTimeout(() => { window.location.href = 'case-opener.html'; }, 2000);
+            }
+        });
+
+        // --- ZAKTUALIZOWANA LOGIKA OTWIERANIA ---
+        openCaseBtn.addEventListener('click', async () => {
+            if (!currentUser || currentBalance < CASE_COST) {
+                alert("You don't have enough glorpies!");
+                return;
+            }
+            if (caseItems.filter(i => i.weight > 0).length === 0) { 
+                alert('Error: No items configured for this case.'); return; 
+            }
+            
+            openCaseBtn.disabled = true; // Zablokuj przycisk na czas operacji
+
+            try {
+                // Odejmij koszt skrzynki z bazy danych
+                const userDocRef = db.collection('users').doc(currentUser.uid);
+                await userDocRef.update({
+                    glorpies: firebase.firestore.FieldValue.increment(-CASE_COST)
+                });
+
+                // Jeśli się udało, rozpocznij animację
+                const wonItem = selectWeightedItem();
+                runOpeningAnimation(wonItem);
+            } catch (error) {
+                console.error("Error opening case: ", error);
+                alert("An error occurred. Please try again.");
+                openCaseBtn.disabled = false; // Odblokuj przycisk w razie błędu
+            }
+        });
+
+        async function runOpeningAnimation(wonItem) {
+            // ... cała logika animacji bez zmian ...
+            const reel = []; const REEL_LENGTH=50, WINNING_INDEX=REEL_LENGTH-5;
+            for(let i=0; i<REEL_LENGTH; i++) { reel.push(i === WINNING_INDEX ? wonItem : caseItems.filter(item => item.weight > 0)[Math.floor(Math.random() * caseItems.filter(item => item.weight > 0).length)]); }
+            spinnerReel.innerHTML = reel.map(item => `<div class="spinner-item"><img src="${FOLDER_PATH+item.filename}" alt="${item.name}"><div class="item-name">${item.name}</div></div>`).join('');
+            spinnerModal.style.display='flex'; spinnerReel.style.transition='none'; spinnerReel.style.transform='translateX(0)'; spinnerReel.offsetHeight; 
+            const itemWidth=150, windowCenter=document.querySelector('.spinner-window').offsetWidth/2;
+            let targetPosition=-(WINNING_INDEX*itemWidth)+windowCenter-(itemWidth/2)+(Math.random()-0.5)*(itemWidth*0.6);
+            spinnerReel.style.transition='transform 3.5s cubic-bezier(0.1, 0.6, 0.3, 1)';
+            spinnerReel.style.transform=`translateX(${targetPosition}px)`;
+            
+            setTimeout(async () => {
+                spinnerModal.style.display='none';
+                if (currentUser) {
+                    const userDocRef = db.collection('users').doc(currentUser.uid);
+                    await userDocRef.update({
+                        inventory: firebase.firestore.FieldValue.arrayUnion({ filename: wonItem.filename, locked: false })
+                    });
+                }
+                showResult(wonItem);
+                // ponowne sprawdzenie salda i odblokowanie przycisku nastąpi automatycznie przez onSnapshot listener
+            }, 4000);
+        }
+
+        function showResult(item) {
+            document.getElementById('result-item-name').textContent = item.name;
+            document.getElementById('result-item-img').src = FOLDER_PATH + item.filename;
+            document.getElementById('result-item-value').textContent = `Value: ${formatGlorpies(item.value)} glorpies`;
+            resultModal.style.display = 'flex';
+        }
+
+        function populateChancesModal() {
+            const sortedItems = [...caseItems].filter(i => i.probability > 0).sort((a,b)=>b.probability-a.probability);
+            document.getElementById('chances-table-body').innerHTML = sortedItems.map(i=>`<tr><td><img src="${FOLDER_PATH+i.filename}" alt="${i.name}"></td><td>${i.name}</td><td>${formatGlorpies(i.value)} glorpies</td><td>${i.probability.toFixed(2)+'%'}</td></tr>`).join('');
+        }
+        
+        // Pozostałe event listenery
+        document.getElementById('show-chances-btn').addEventListener('click', () => { chancesModal.style.display = 'flex'; });
+        document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if(e.target === m) m.style.display='none'; }));
+        document.querySelectorAll('.close-modal-btn').forEach(b => b.addEventListener('click', () => { document.getElementById(b.dataset.modalId).style.display = 'none'; }));
+    });
+    </script>
+</body>
+</html>
