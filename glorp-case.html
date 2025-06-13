@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Glorp Case Opener</title>
+    <title>Glorp Case Opener v2</title>
     <style>
         :root {
             --primary-bg: #1a1c20;
@@ -62,6 +62,8 @@
 
         .case-container img {
             max-width: 200px;
+            height: 200px;
+            object-fit: contain;
             margin-bottom: 20px;
             cursor: pointer;
             transition: transform 0.2s ease-in-out;
@@ -97,7 +99,7 @@
 
         #inventory-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
             gap: 15px;
             background-color: var(--secondary-bg);
             padding: 20px;
@@ -118,12 +120,19 @@
         }
 
         .inventory-item img {
-            max-width: 80px;
+            max-width: 100px;
             height: 80px;
             object-fit: contain;
             margin: 0 auto 10px;
         }
         
+        .item-name {
+            font-weight: bold;
+            font-size: 1em;
+            margin-bottom: 5px;
+            word-wrap: break-word;
+        }
+
         .item-value {
             font-size: 0.9em;
             color: var(--gold-color);
@@ -166,12 +175,15 @@
             animation: fadeIn 0.5s;
         }
         
-        .result-content h2 {
+        #result-item-name {
             margin-top: 0;
+            font-size: 1.8em;
         }
 
         .result-content img {
             max-width: 250px;
+            height: 250px;
+            object-fit: contain;
             margin-bottom: 20px;
         }
         
@@ -190,7 +202,7 @@
 
     <div class="container">
         <header>
-            <h1>Glorp Case</h1>
+            <h1>Glorp Case v2</h1>
             <div id="balance-display">0 glorpies</div>
         </header>
 
@@ -213,7 +225,8 @@
     <!-- Result Modal -->
     <div id="result-modal">
         <div class="result-content">
-            <h2>You've got a new Glorp!</h2>
+            <h2>You've unboxed:</h2>
+            <h3 id="result-item-name"></h3>
             <img id="result-item-img" src="" alt="Won Item">
             <div id="result-item-value" class="item-value"></div>
             <p>Click anywhere to close.</p>
@@ -225,18 +238,18 @@
     document.addEventListener('DOMContentLoaded', () => {
 
         // --- CONFIGURATION ---
-        // IMPORTANT: Add all your item .png filenames from the 'glorp-case' folder here.
-        // The script CANNOT read the folder contents automatically due to browser security.
-        const possibleItems = [
-            'glorp-blue-10-00.png',
-            'glorp-green-25-00.png',
-            'glorp-red-100-00.png',
-            'glorp-gold-1000-00.png',
-            'glorp-shiny-50000-00.png'
-        ];
-        
         const FOLDER_PATH = 'glorp-case/';
-        const COOKIE_NAME = 'glorpPlayerData';
+        const COOKIE_NAME = 'glorpPlayerData_v2';
+
+        // Add all your item .png and .gif filenames from 'glorp-case' folder here.
+        // Follow the format: 'name-with-hyphens-VALUE.extension'
+        const possibleItems = [
+            'glorp-blue-10.png',
+            'glorp-green-50.png',
+            'glorp-red-250.png',
+            'super-glorp-gold-1500.png',
+            'glorp-party-animated-10000.gif'
+        ];
         
         let playerData = {
             glorpies: 100,
@@ -249,7 +262,31 @@
         const inventoryGrid = document.getElementById('inventory-grid');
         const resultModal = document.getElementById('result-modal');
         const resultItemImg = document.getElementById('result-item-img');
+        const resultItemName = document.getElementById('result-item-name');
         const resultItemValue = document.getElementById('result-item-value');
+
+        // --- PARSING FUNCTIONS ---
+        function parseValueFromFilename(filename) {
+            // Extracts value from format: name-VALUE.ext
+            const regex = /(\d+)\.(png|gif)$/i;
+            const match = filename.match(regex);
+            if (match && match[1]) {
+                return parseInt(match[1], 10);
+            }
+            return 0; // Fallback
+        }
+        
+        function parseNameFromFilename(filename) {
+            // Creates a display name: 'super-glorp-gold-1500.png' -> 'Super Glorp Gold'
+            const nameWithoutExt = filename.replace(/\.(png|gif)$/i, '');
+            const parts = nameWithoutExt.split('-');
+            parts.pop(); // Remove the value part
+            return parts.map(part => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
+        }
+        
+        function formatGlorpies(amount) {
+            return amount.toLocaleString('en-US') + ' glorpies';
+        }
 
         // --- COOKIE FUNCTIONS ---
         function setCookie(name, value, days) {
@@ -269,11 +306,7 @@
                 let c = ca[i];
                 while (c.charAt(0) == ' ') c = c.substring(1, c.length);
                 if (c.indexOf(nameEQ) == 0) {
-                    try {
-                        return JSON.parse(c.substring(nameEQ.length, c.length));
-                    } catch(e) {
-                        return null;
-                    }
+                    try { return JSON.parse(c.substring(nameEQ.length, c.length)); } catch (e) { return null; }
                 }
             }
             return null;
@@ -292,40 +325,27 @@
             setCookie(COOKIE_NAME, playerData, 365);
         }
 
-        function parseValueFromFilename(filename) {
-            // Extracts value from format: name-VALUE-00.png
-            // Example: glorp-shiny-50000-00.png -> 50000
-            const regex = /-([\d-]+)-\d+\.png$/;
-            const match = filename.match(regex);
-            if (match && match[1]) {
-                const priceString = match[1].replace(/-/g, '');
-                return parseInt(priceString, 10);
-            }
-            return 0; // Default value if format is incorrect
-        }
-        
-        function formatGlorpies(amount) {
-            return amount.toLocaleString('en-US') + ' glorpies';
-        }
-
         function updateUI() {
-            // Update balance
             balanceDisplay.textContent = formatGlorpies(playerData.glorpies);
 
-            // Update inventory
             inventoryGrid.innerHTML = '';
             if (playerData.inventory.length === 0) {
                 inventoryGrid.innerHTML = '<p style="color: #888; text-align: center; width: 100%;">Your inventory is empty.</p>';
             } else {
                 playerData.inventory.forEach((itemFilename, index) => {
                     const itemValue = parseValueFromFilename(itemFilename);
+                    const itemName = parseNameFromFilename(itemFilename);
                     
                     const itemDiv = document.createElement('div');
                     itemDiv.className = 'inventory-item';
 
                     const itemImg = document.createElement('img');
                     itemImg.src = FOLDER_PATH + itemFilename;
-                    itemImg.alt = itemFilename.replace('.png', '');
+                    itemImg.alt = itemName;
+
+                    const nameP = document.createElement('p');
+                    nameP.className = 'item-name';
+                    nameP.textContent = itemName;
 
                     const valueP = document.createElement('p');
                     valueP.className = 'item-value';
@@ -334,9 +354,10 @@
                     const sellBtn = document.createElement('button');
                     sellBtn.className = 'sell-btn';
                     sellBtn.textContent = 'Sell';
-                    sellBtn.dataset.index = index; // Store index for selling
+                    sellBtn.dataset.index = index;
 
                     itemDiv.appendChild(itemImg);
+                    itemDiv.appendChild(nameP);
                     itemDiv.appendChild(valueP);
                     itemDiv.appendChild(sellBtn);
                     inventoryGrid.appendChild(itemDiv);
@@ -346,22 +367,24 @@
         
         function showResult(itemFilename) {
             const itemValue = parseValueFromFilename(itemFilename);
+            const itemName = parseNameFromFilename(itemFilename);
+            
             resultItemImg.src = FOLDER_PATH + itemFilename;
+            resultItemName.textContent = itemName;
             resultItemValue.textContent = `Value: ${formatGlorpies(itemValue)}`;
+            
             resultModal.style.display = 'flex';
         }
 
         // --- EVENT LISTENERS ---
         openCaseBtn.addEventListener('click', () => {
             if (possibleItems.length === 0) {
-                alert('Error: No items configured to be opened.');
+                alert('Error: No items configured. Please add items to the `possibleItems` array in the script.');
                 return;
             }
             
-            // Disable button during animation
             openCaseBtn.disabled = true;
 
-            // Simple spin animation simulation
             let spinCount = 0;
             const caseImage = document.getElementById('case-image');
             const spinInterval = setInterval(() => {
@@ -371,7 +394,6 @@
                 if (spinCount > 15) { // Stop after ~1.5 seconds
                     clearInterval(spinInterval);
                     
-                    // The "real" won item
                     const wonItem = possibleItems[Math.floor(Math.random() * possibleItems.length)];
                     caseImage.src = FOLDER_PATH + 'case.png'; // Reset case image
                     
