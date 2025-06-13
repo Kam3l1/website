@@ -3,96 +3,256 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Case Opener - Select a Case.</title>
+    <title>Case Opener - Menu & Inventory</title>
     <style>
         :root {
-            --primary-bg: #1a1c20;
-            --secondary-bg: #2a2d32;
-            --text-color: #e0e0e0;
-            --accent-color: #4d88ff;
-            --gold-color: #ffd700;
-            --border-color: #444;
+            --primary-bg: #1a1c20; --secondary-bg: #2a2d32; --text-color: #e0e0e0;
+            --accent-color: #4d88ff; --gold-color: #ffd700; --border-color: #444;
+            /* Rarity Glow Colors */
+            --rarity-legendary: #ffd700; /* 0% - 1% */
+            --rarity-epic: #da70d6;      /* 1% - 5% */
+            --rarity-rare: #4d88ff;      /* 5% - 20% */
+            --rarity-common: #9d9d9d;   /* > 20% */
         }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--primary-bg);
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .container {
-            width: 100%;
-            max-width: 900px;
-        }
-        header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-        h1 {
-            font-size: 2.5em;
-            color: var(--accent-color);
-        }
-        #case-selection-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 20px;
-            justify-items: center;
-        }
-        .case-card {
-            background-color: var(--secondary-bg);
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            text-align: center;
-            padding: 20px;
-            text-decoration: none;
-            color: var(--text-color);
-            transition: transform 0.2s, box-shadow 0.2s;
-            width: 100%;
-            box-sizing: border-box;
-        }
-        .case-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-        .case-card img {
-            max-width: 150px;
-            height: 150px;
-            object-fit: contain;
-        }
-        .case-card h2 {
-            margin: 15px 0 5px;
-            font-size: 1.4em;
-        }
-        .case-card .price {
-            font-size: 1.1em;
-            font-weight: bold;
-            color: #28a745; /* Zielony kolor dla darmowej skrzynki */
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--primary-bg); color: var(--text-color); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { width: 100%; max-width: 1200px; }
+        header { text-align: center; margin-bottom: 20px; }
+        h1 { font-size: 2.5em; color: var(--accent-color); }
+        .section-title { font-size: 2em; color: var(--accent-color); border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 20px; }
+        #case-selection-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; justify-items: center; margin-bottom: 40px; }
+        .case-card { background-color: var(--secondary-bg); border-radius: 8px; border: 1px solid var(--border-color); text-align: center; padding: 20px; text-decoration: none; color: var(--text-color); transition: transform 0.2s, box-shadow 0.2s; width: 100%; box-sizing: border-box; }
+        .case-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); }
+        .case-card img { max-width: 150px; height: 150px; object-fit: contain; }
+        .case-card h2 { margin: 15px 0 5px; font-size: 1.4em; }
+        .case-card .price { font-size: 1.1em; font-weight: bold; color: #28a745; }
+
+        /* --- Inventory Styles --- */
+        .inventory-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        #balance-display { font-size: 1.8em; font-weight: bold; color: var(--gold-color); }
+        .btn { color: white; border: none; padding: 10px 20px; font-size: 1em; font-weight: bold; border-radius: 5px; cursor: pointer; transition: background-color 0.2s; }
+        #sell-all-btn { background-color: #e64c4c; }
+        #sell-all-btn:hover { background-color: #c0392b; }
+        #inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; background-color: var(--primary-bg); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); min-height: 150px; }
+        .inventory-item { background-color: var(--secondary-bg); border: 2px solid var(--border-color); border-radius: 8px; padding: 10px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; transition: box-shadow 0.3s, border-color 0.3s; }
+        .inventory-item.locked { border-color: #e64c4c; }
+        .inventory-item img { max-width: 100px; height: 80px; object-fit: contain; margin: 0 auto 10px; }
+        .item-name { font-weight: bold; font-size: 1em; margin-bottom: 5px; word-wrap: break-word; }
+        .item-chance { font-size: 0.8em; color: #aaa; margin-bottom: 8px; }
+        .item-value { font-size: 0.9em; color: var(--gold-color); margin-bottom: 10px; }
+        .item-actions { display: flex; flex-direction: column; gap: 5px; }
+        .action-btn { background-color: #6c757d; color: white; border: none; padding: 8px 12px; font-size: 0.9em; border-radius: 5px; cursor: pointer; width: 100%; transition: background-color 0.2s; }
+        .sell-btn { background-color: #28a745; }
+        .sell-btn:hover { background-color: #218838; }
+        .sell-btn:disabled { background-color: #555; color: #999; cursor: not-allowed; }
+        .lock-btn { background-color: var(--accent-color); }
+        .lock-btn.locked { background-color: #e64c4c; }
+        .lock-btn:hover { background-color: #3a70e0; }
+        .lock-btn.locked:hover { background-color: #c0392b; }
+        
+        /* Rarity Glow Classes */
+        .rarity-legendary { box-shadow: 0 0 15px 3px var(--rarity-legendary); border-color: var(--rarity-legendary); }
+        .rarity-epic { box-shadow: 0 0 12px 2px var(--rarity-epic); border-color: var(--rarity-epic); }
+        .rarity-rare { box-shadow: 0 0 10px 1px var(--rarity-rare); border-color: var(--rarity-rare); }
+        .rarity-common { box-shadow: 0 0 8px 0px var(--rarity-common); border-color: var(--rarity-common); }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Select a Case</h1>
+            <h1>Case Opener</h1>
         </header>
         <main>
+            <h2 class="section-title">Select a Case</h2>
             <div id="case-selection-grid">
-                
-                <!-- Karta Skrzynki "Glorp Case" -->
                 <a href="glorp-case.html" class="case-card">
                     <img src="case.png" alt="Glorp Case">
                     <h2>Glorp Case</h2>
                     <p class="price">Free</p>
                 </a>
-                
-                <!-- W PRZYSZŁOŚCI: Możesz skopiować i wkleić powyższy blok <a>, 
-                     aby dodać kolejną skrzynkę. Wystarczy zmienić href, src, nazwę i cenę. -->
+            </div>
 
+            <div class="inventory-section">
+                <div class="inventory-header">
+                    <h2 class="section-title" style="margin-bottom:0;">Inventory</h2>
+                    <div id="balance-display">0 glorpies</div>
+                </div>
+                 <div style="text-align: right; margin-bottom: 20px;">
+                    <button id="sell-all-btn" class="btn">Sell All Unlocked</button>
+                </div>
+                <div id="inventory-grid"></div>
             </div>
         </main>
     </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const FOLDER_PATH = '';
+        const COOKIE_NAME = 'glorpPlayerData_v8'; // New cookie version for new data structure
+        const SECRET_KEY = 5;
+
+        // Data needs to be available on this page to calculate chances
+        const itemFilenames = [ 'Glorp-10.png', 'Glorp-Jam-15.gif', 'Bday-Glorp-30.gif', 'Christmas-Glorp-45.png' ];
+        const GLORP_CASE_CUSTOM_CHANCES_KEY = 'glorpCaseCustomChances';
+        
+        let playerData = { glorpies: 100, inventory: [] }; // Inventory items will now be objects: {filename: '...', locked: false}
+        let caseItems = []; // To store items with their probabilities
+
+        const balanceDisplay = document.getElementById('balance-display');
+        const inventoryGrid = document.getElementById('inventory-grid');
+        const sellAllBtn = document.getElementById('sell-all-btn');
+
+        // --- DATA ENCODING/DECODING (unchanged) ---
+        function encodeData(data) { try { let jsonString = JSON.stringify(data); let s = ''; for (let i=0; i<jsonString.length; i++) s+=String.fromCharCode(jsonString.charCodeAt(i)+SECRET_KEY); return btoa(s); } catch(e){return '';}}
+        function decodeData(encoded) { try { let s = atob(encoded); let j = ''; for (let i=0; i<s.length; i++) j+=String.fromCharCode(s.charCodeAt(i)-SECRET_KEY); return JSON.parse(j); } catch(e){return null;}}
+        
+        const setCookie = (name, data, days) => { const encoded = encodeData(data); let d=new Date(); d.setTime(d.getTime()+(days*24*60*60*1000)); document.cookie = `${name}=${encoded};expires=${d.toUTCString()};path=/;SameSite=Lax`; };
+        const getCookie = name => { const c=document.cookie.split(';').find(r=>r.trim().startsWith(name+'=')); return c ? decodeData(c.split('=')[1]) : null; };
+
+        // --- UTILITY FUNCTIONS ---
+        const parseValue = f => parseInt((f.match(/(\d+)\.(png|gif)$/i) || [])[1] || 0, 10);
+        const parseName = f => { const p = f.replace(/\.(png|gif)$/i, '').split('-'); p.pop(); return p.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '); };
+        const formatGlorpies = n => n.toLocaleString('en-US') + ' glorpies';
+
+        function initializeCaseItems() {
+            let customChances = {};
+            try {
+                const stored = localStorage.getItem(GLORP_CASE_CUSTOM_CHANCES_KEY);
+                if (stored) customChances = JSON.parse(stored);
+            } catch (e) {
+                console.error("Could not parse custom chances, using defaults.", e);
+            }
+
+            const hasCustomChances = Object.keys(customChances).length > 0;
+            let totalWeight = 0;
+
+            const itemsWithWeights = itemFilenames.map(f => {
+                const value = parseValue(f);
+                if (value === 0) return null;
+                const weight = hasCustomChances && customChances[f] !== undefined
+                    ? parseFloat(customChances[f])
+                    : (1 / value);
+                totalWeight += weight;
+                return { filename: f, name: parseName(f), value: value, weight: weight };
+            }).filter(Boolean);
+
+            if (totalWeight > 0) {
+                 caseItems = itemsWithWeights.map(item => ({
+                    ...item,
+                    probability: (item.weight / totalWeight) * 100
+                }));
+            }
+        }
+        
+        function getRarityClass(probability) {
+            if (probability <= 1) return 'rarity-legendary';
+            if (probability <= 5) return 'rarity-epic';
+            if (probability <= 20) return 'rarity-rare';
+            return 'rarity-common';
+        }
+
+        function updateUI() {
+            balanceDisplay.textContent = formatGlorpies(playerData.glorpies);
+            
+            if (playerData.inventory.length === 0) {
+                inventoryGrid.innerHTML = '<p style="color:#888; text-align:center; grid-column: 1 / -1;">Your inventory is empty. Open some cases!</p>';
+                return;
+            }
+
+            inventoryGrid.innerHTML = playerData.inventory.map((item, index) => {
+                const itemDetails = caseItems.find(ci => ci.filename === item.filename);
+                if (!itemDetails) return ''; // Skip if item details not found
+
+                const probability = itemDetails.probability;
+                const rarityClass = getRarityClass(probability);
+                const probText = probability < 0.001 ? '<0.001%' : probability.toFixed(4) + '%';
+
+                return `
+                    <div class="inventory-item ${rarityClass} ${item.locked ? 'locked' : ''}">
+                        <img src="${FOLDER_PATH + item.filename}" alt="${itemDetails.name}">
+                        <p class="item-name">${itemDetails.name}</p>
+                        <p class="item-chance">Drop Chance: ${probText}</p>
+                        <p class="item-value">${formatGlorpies(itemDetails.value)}</p>
+                        <div class="item-actions">
+                            <button class="action-btn sell-btn" data-index="${index}" ${item.locked ? 'disabled' : ''}>Sell</button>
+                            <button class="action-btn lock-btn ${item.locked ? 'locked' : ''}" data-index="${index}">${item.locked ? 'Unlock' : 'Lock'}</button>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        function loadPlayerData() {
+            const savedData = getCookie(COOKIE_NAME);
+            if (savedData) {
+                // Ensure new data structure is used
+                playerData = {
+                    glorpies: savedData.glorpies || 0,
+                    inventory: (savedData.inventory || []).map(item => {
+                        // Compatibility check for old save format
+                        if (typeof item === 'string') {
+                            return { filename: item, locked: false };
+                        }
+                        return item;
+                    })
+                };
+            }
+            updateUI();
+        }
+
+        function savePlayerData() {
+            setCookie(COOKIE_NAME, playerData, 365);
+        }
+
+        inventoryGrid.addEventListener('click', e => {
+            if (!e.target.dataset.index) return;
+            const index = parseInt(e.target.dataset.index, 10);
+            const item = playerData.inventory[index];
+            if (!item) return;
+
+            if (e.target.classList.contains('sell-btn')) {
+                if (item.locked) return; // Should be disabled, but double check
+                const itemValue = parseValue(item.filename);
+                playerData.glorpies += itemValue;
+                playerData.inventory.splice(index, 1);
+            } 
+            else if (e.target.classList.contains('lock-btn')) {
+                item.locked = !item.locked;
+            }
+
+            savePlayerData();
+            updateUI();
+        });
+
+        sellAllBtn.addEventListener('click', () => {
+            let totalValue = 0;
+            const itemsToKeep = [];
+            const itemsToSell = [];
+
+            playerData.inventory.forEach(item => {
+                if (item.locked) {
+                    itemsToKeep.push(item);
+                } else {
+                    itemsToSell.push(item);
+                    totalValue += parseValue(item.filename);
+                }
+            });
+
+            if (itemsToSell.length === 0) {
+                alert("No unlocked items to sell.");
+                return;
+            }
+
+            if (confirm(`Are you sure you want to sell ${itemsToSell.length} item(s) for ${formatGlorpies(totalValue)}?`)) {
+                playerData.glorpies += totalValue;
+                playerData.inventory = itemsToKeep;
+                savePlayerData();
+                updateUI();
+            }
+        });
+
+        // Initialize everything
+        initializeCaseItems();
+        loadPlayerData();
+    });
+    </script>
 </body>
 </html>
