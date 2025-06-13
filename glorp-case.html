@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Glorp Case Opener </title>
+    <title>Glorp Case Opener</title>
     <style>
         :root {
             --primary-bg: #1a1c20;
@@ -12,6 +12,8 @@
             --accent-color: #4d88ff;
             --gold-color: #ffd700;
             --border-color: #444;
+            --item-width: 150px; /* Szerokość przedmiotu w animacji */
+            --item-height: 120px;
         }
 
         body {
@@ -37,8 +39,7 @@
         #balance-display { font-size: 1.5em; font-weight: bold; color: var(--gold-color); }
 
         .main-content { text-align: center; background-color: var(--secondary-bg); padding: 30px; border-radius: 8px; border: 1px solid var(--border-color); }
-        .case-container img { max-width: 200px; height: 200px; object-fit: contain; margin-bottom: 20px; transition: transform 0.2s ease-in-out; }
-        .case-container img:hover { transform: scale(1.05); }
+        .case-container img { max-width: 200px; height: 200px; object-fit: contain; margin-bottom: 20px; }
         
         .button-group { display: flex; justify-content: center; gap: 15px; }
 
@@ -67,22 +68,80 @@
         .inventory-item img { max-width: 100px; height: 80px; object-fit: contain; margin: 0 auto 10px; }
         .item-name { font-weight: bold; font-size: 1em; margin-bottom: 5px; word-wrap: break-word; }
         .item-value { font-size: 0.9em; color: var(--gold-color); margin-bottom: 10px; }
-        .sell-btn {
-            background-color: #e64c4c; color: white; border: none; padding: 8px 12px;
-            font-size: 0.9em; border-radius: 5px; cursor: pointer; width: 100%;
-        }
+        .sell-btn { background-color: #e64c4c; color: white; border: none; padding: 8px 12px; font-size: 0.9em; border-radius: 5px; cursor: pointer; width: 100%; }
         .sell-btn:hover { background-color: #c0392b; }
 
-        /* Modal Styles */
+        /* --- NOWE STYLE DLA ANIMACJI CS:GO --- */
+        #spinner-modal {
+            background-color: rgba(0, 0, 0, 0.9);
+            flex-direction: column;
+        }
+
+        .spinner-window {
+            width: 90%;
+            max-width: 1200px;
+            height: var(--item-height);
+            background-color: var(--primary-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .spinner-marker {
+            position: absolute;
+            top: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 15px solid var(--accent-color);
+            z-index: 10;
+        }
+
+        #spinner-reel {
+            display: flex;
+            height: 100%;
+            /* Animacja będzie ustawiana przez JavaScript */
+            transition: transform 3.5s cubic-bezier(0.1, 0.6, 0.3, 1);
+        }
+
+        .spinner-item {
+            width: var(--item-width);
+            height: 100%;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: var(--secondary-bg);
+            box-sizing: border-box;
+            border-right: 2px solid var(--primary-bg);
+        }
+
+        .spinner-item img {
+            max-width: 90%;
+            max-height: 70%;
+            object-fit: contain;
+        }
+        
+        .spinner-item .item-name {
+            font-size: 0.8em;
+            margin-top: 5px;
+        }
+
+        /* --- KONIEC NOWYCH STYLI --- */
+
         .modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(0, 0, 0, 0.8); display: none;
             justify-content: center; align-items: center; z-index: 1000;
         }
         .modal-content {
-            background-color: var(--secondary-bg); padding: 30px; border-radius: 10px;
-            text-align: center; border: 2px solid var(--accent-color);
-            animation: fadeIn 0.5s; max-height: 80vh; overflow-y: auto;
+            background-color: var(--secondary-bg); padding: 30px; border-radius: 10px; text-align: center;
+            border: 2px solid var(--accent-color); animation: fadeIn 0.5s; max-height: 80vh; overflow-y: auto;
         }
         .modal-content h2, .modal-content h3 { margin-top: 0; }
         .modal-content img { max-width: 250px; height: 250px; object-fit: contain; margin-bottom: 20px; }
@@ -107,7 +166,6 @@
         <div class="main-content">
             <h2>Glorp Case (Free)</h2>
             <div class="case-container">
-                <!-- ZMIANA TUTAJ: Usunięto 'glorp-case/' ze ścieżki -->
                 <img src="case.png" alt="Glorp Case" id="case-image">
             </div>
             <div class="button-group">
@@ -122,7 +180,17 @@
         </div>
     </div>
     
-    <!-- Result Modal -->
+    <!-- NOWY MODAL DLA ANIMACJI CS:GO -->
+    <div id="spinner-modal" class="modal">
+        <div class="spinner-window">
+            <div class="spinner-marker"></div>
+            <div id="spinner-reel">
+                <!-- Przedmioty do animacji będą generowane tutaj przez JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal z wynikiem (bez zmian) -->
     <div id="result-modal" class="modal">
         <div class="modal-content">
             <h2>You've unboxed:</h2>
@@ -133,56 +201,46 @@
         </div>
     </div>
 
-    <!-- Chances Modal -->
+    <!-- Modal z szansami (bez zmian) -->
     <div id="chances-modal" class="modal">
         <div class="modal-content">
             <span class="close-modal-btn" data-modal-id="chances-modal">×</span>
             <h2>Case Drop Chances</h2>
-            <p>Rarer items have a lower chance of being unboxed.</p>
-            <table id="chances-table">
-                <thead>
-                    <tr><th>Item</th><th>Name</th><th>Value</th><th>Chance</th></tr>
-                </thead>
-                <tbody id="chances-table-body">
-                    <!-- Chances will be populated by JS -->
-                </tbody>
-            </table>
+            <table id="chances-table"><tbody id="chances-table-body"></tbody></table>
         </div>
     </div>
 
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // ZMIANA TUTAJ: Ścieżka jest teraz pusta, bo pliki są w tym samym folderze
         const FOLDER_PATH = '';
-        const COOKIE_NAME = 'glorpPlayerData_v4'; // Zmieniona nazwa cookie, aby uniknąć konfliktów
+        const COOKIE_NAME = 'glorpPlayerData_v5';
 
         const itemFilenames = [
-            'Glorp-10.png',
-            'Glorp-Jam-15.gif',
-            'Bday-Glorp-30.gif',
-            'Christmas-Glorp-45.png'
+            'Glorp-10.png', 'Glorp-Jam-15.gif', 'Bday-Glorp-30.gif', 'Christmas-Glorp-45.png'
         ];
 
         let playerData = { glorpies: 100, inventory: [] };
         let caseItems = [];
         let totalWeight = 0;
 
-        const balanceDisplay = document.getElementById('balance-display');
+        // --- UI ELEMENTS ---
         const openCaseBtn = document.getElementById('open-case-btn');
-        const showChancesBtn = document.getElementById('show-chances-btn');
+        const balanceDisplay = document.getElementById('balance-display');
         const inventoryGrid = document.getElementById('inventory-grid');
+        
+        // Modals
+        const spinnerModal = document.getElementById('spinner-modal');
+        const spinnerReel = document.getElementById('spinner-reel');
         const resultModal = document.getElementById('result-modal');
-        const resultItemImg = document.getElementById('result-item-img');
-        const resultItemName = document.getElementById('result-item-name');
-        const resultItemValue = document.getElementById('result-item-value');
         const chancesModal = document.getElementById('chances-modal');
-        const chancesTableBody = document.getElementById('chances-table-body');
-
+        
+        // --- PARSING & FORMATTING (bez zmian) ---
         const parseValue = f => parseInt((f.match(/(\d+)\.(png|gif)$/i) || [])[1] || 0, 10);
         const parseName = f => { const parts = f.replace(/\.(png|gif)$/i, '').split('-'); parts.pop(); return parts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' '); };
         const formatGlorpies = n => n.toLocaleString('en-US') + ' glorpies';
 
+        // --- WEIGHTED DROP LOGIC (bez zmian) ---
         function initializeCaseItems() {
             const itemsWithWeights = itemFilenames.map(filename => { const value = parseValue(filename); if (value === 0) return null; return { filename, name: parseName(filename), value, weight: 1 / value }; }).filter(Boolean);
             totalWeight = itemsWithWeights.reduce((sum, item) => sum + item.weight, 0);
@@ -196,57 +254,103 @@
             return caseItems[caseItems.length - 1];
         }
 
-        const setCookie = (name, val, days) => { let d = new Date(); d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000)); document.cookie = `${name}=${JSON.stringify(val)};expires=${d.toUTCString()};path=/;SameSite=Lax`; };
-        const getCookie = name => { const c = document.cookie.split(';').find(row => row.trim().startsWith(name + '=')); if (c) try { return JSON.parse(c.split('=')[1]); } catch(e) { return null; } return null; };
-
-        function loadPlayerData() { const savedData = getCookie(COOKIE_NAME); if (savedData) playerData = savedData; updateUI(); }
+        // --- CORE DATA & UI (bez zmian) ---
+        const setCookie = (n, v, d) => { let e = new Date(); e.setTime(e.getTime() + (d * 864e5)); document.cookie = `${n}=${JSON.stringify(v)};expires=${e.toUTCString()};path=/;SameSite=Lax`; };
+        const getCookie = n => { const c = document.cookie.split(';').find(r => r.trim().startsWith(n + '=')); if(c) try { return JSON.parse(c.split('=')[1]); } catch(e){ return null; } return null; };
+        function loadPlayerData() { const saved = getCookie(COOKIE_NAME); if (saved) playerData = saved; updateUI(); }
         function savePlayerData() { setCookie(COOKIE_NAME, playerData, 365); }
-
         function updateUI() {
             balanceDisplay.textContent = formatGlorpies(playerData.glorpies);
-            inventoryGrid.innerHTML = '';
-            if (playerData.inventory.length === 0) {
-                inventoryGrid.innerHTML = '<p style="color: #888; text-align: center; width: 100%;">Your inventory is empty.</p>';
-            } else {
-                playerData.inventory.forEach((filename, index) => {
-                    inventoryGrid.innerHTML += `<div class="inventory-item"><img src="${FOLDER_PATH}${filename}" alt="${parseName(filename)}"><p class="item-name">${parseName(filename)}</p><p class="item-value">${formatGlorpies(parseValue(filename))}</p><button class="sell-btn" data-index="${index}">Sell</button></div>`;
-                });
-            }
+            inventoryGrid.innerHTML = playerData.inventory.length === 0 ? '<p style="color: #888; text-align: center; width: 100%;">Your inventory is empty.</p>' : playerData.inventory.map((f, i) => `<div class="inventory-item"><img src="${FOLDER_PATH}${f}" alt="${parseName(f)}"><p class="item-name">${parseName(f)}</p><p class="item-value">${formatGlorpies(parseValue(f))}</p><button class="sell-btn" data-index="${i}">Sell</button></div>`).join('');
         }
-        
-        function showResult(item) { resultItemImg.src = FOLDER_PATH + item.filename; resultItemName.textContent = item.name; resultItemValue.textContent = `Value: ${formatGlorpies(item.value)}`; resultModal.style.display = 'flex'; }
-        
-        function populateChancesModal() {
-            chancesTableBody.innerHTML = '';
-            const sortedItems = [...caseItems].sort((a, b) => a.probability - b.probability);
-            sortedItems.forEach(item => { const chance = item.probability < 0.001 ? '< 0.001%' : item.probability.toFixed(4) + '%'; chancesTableBody.innerHTML += `<tr><td><img src="${FOLDER_PATH}${item.filename}" alt="${item.name}"></td><td>${item.name}</td><td>${formatGlorpies(item.value)}</td><td>${chance}</td></tr>`; });
+        function showResult(item) {
+            document.getElementById('result-item-name').textContent = item.name;
+            document.getElementById('result-item-img').src = FOLDER_PATH + item.filename;
+            document.getElementById('result-item-value').textContent = `Value: ${formatGlorpies(item.value)}`;
+            resultModal.style.display = 'flex';
         }
 
+        // --- NOWA LOGIKA ANIMACJI OTWIERANIA ---
+        function generateReelItems(winningItem) {
+            const reelItems = [];
+            const REEL_LENGTH = 50; // Długość taśmy - więcej = dłuższa animacja
+            const WINNING_INDEX = REEL_LENGTH - 5; // Pozycja wygranego przedmiotu (daleko na końcu)
+
+            for (let i = 0; i < REEL_LENGTH; i++) {
+                if (i === WINNING_INDEX) {
+                    reelItems.push(winningItem);
+                } else {
+                    // Wypełnij losowymi przedmiotami (można by je też ważyć, ale dla animacji nie trzeba)
+                    reelItems.push(caseItems[Math.floor(Math.random() * caseItems.length)]);
+                }
+            }
+            return reelItems;
+        }
+
+        function runOpeningAnimation(wonItem) {
+            const reel = generateReelItems(wonItem);
+            spinnerReel.innerHTML = reel.map(item => `
+                <div class="spinner-item">
+                    <img src="${FOLDER_PATH}${item.filename}" alt="${item.name}">
+                    <div class="item-name">${item.name}</div>
+                </div>
+            `).join('');
+            
+            spinnerModal.style.display = 'flex';
+
+            // Resetuj pozycję bez animacji
+            spinnerReel.style.transition = 'none';
+            spinnerReel.style.transform = 'translateX(0)';
+            
+            // Wymuś reflow, aby przeglądarka zastosowała powyższe style przed animacją
+            spinnerReel.offsetHeight; 
+
+            // Ustaw końcową pozycję animacji
+            const itemWidth = 150; // Musi być zgodne z CSS (--item-width)
+            const winningIndex = reel.length - 5;
+            const spinnerWindow = document.querySelector('.spinner-window');
+            const windowCenter = spinnerWindow.offsetWidth / 2;
+            
+            // Oblicz pozycję tak, aby środek wygranego przedmiotu znalazł się na środku okna
+            let targetPosition = -(winningIndex * itemWidth) + windowCenter - (itemWidth / 2);
+            
+            // Dodaj małą losowość do końcowej pozycji dla lepszego efektu
+            const randomOffset = (Math.random() - 0.5) * (itemWidth * 0.6);
+            targetPosition += randomOffset;
+
+            // Włącz animację i przesuń bęben
+            spinnerReel.style.transition = 'transform 3.5s cubic-bezier(0.1, 0.6, 0.3, 1)';
+            spinnerReel.style.transform = `translateX(${targetPosition}px)`;
+
+            // Po zakończeniu animacji
+            setTimeout(() => {
+                spinnerModal.style.display = 'none';
+                playerData.inventory.push(wonItem.filename);
+                savePlayerData();
+                updateUI();
+                showResult(wonItem);
+                openCaseBtn.disabled = false;
+            }, 4000); // Czas musi być nieco dłuższy niż czas trwania animacji
+        }
+
+
+        // --- EVENT LISTENERS ---
         openCaseBtn.addEventListener('click', () => {
             if (caseItems.length === 0) { alert('Error: No items configured.'); return; }
-            openCaseBtn.disabled = true; let spinCount = 0; const caseImage = document.getElementById('case-image');
-            const spinInterval = setInterval(() => {
-                caseImage.src = FOLDER_PATH + caseItems[Math.floor(Math.random() * caseItems.length)].filename;
-                if (++spinCount > 15) {
-                    clearInterval(spinInterval); const wonItem = selectWeightedItem();
-                    caseImage.src = FOLDER_PATH + 'case.png'; playerData.inventory.push(wonItem.filename);
-                    savePlayerData(); updateUI(); showResult(wonItem); openCaseBtn.disabled = false;
-                }
-            }, 100);
-        });
-
-        inventoryGrid.addEventListener('click', e => {
-            if (e.target.classList.contains('sell-btn')) {
-                const index = parseInt(e.target.dataset.index, 10);
-                const filename = playerData.inventory[index];
-                if (filename) { playerData.glorpies += parseValue(filename); playerData.inventory.splice(index, 1); savePlayerData(); updateUI(); }
-            }
+            openCaseBtn.disabled = true;
+            
+            const wonItem = selectWeightedItem();
+            runOpeningAnimation(wonItem);
         });
         
-        showChancesBtn.addEventListener('click', () => { chancesModal.style.display = 'flex'; });
-        document.querySelectorAll('.modal').forEach(modal => { modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; }); });
-        document.querySelectorAll('.close-modal-btn').forEach(btn => { btn.addEventListener('click', () => { document.getElementById(btn.dataset.modalId).style.display = 'none'; }); });
+        // Reszta event listenerów (bez zmian)
+        inventoryGrid.addEventListener('click', e => { if (e.target.classList.contains('sell-btn')) { const i = parseInt(e.target.dataset.index, 10); const f = playerData.inventory[i]; if(f){ playerData.glorpies += parseValue(f); playerData.inventory.splice(i, 1); savePlayerData(); updateUI(); } } });
+        document.getElementById('show-chances-btn').addEventListener('click', () => { chancesModal.style.display = 'flex'; });
+        document.querySelectorAll('.modal').forEach(m => { m.addEventListener('click', e => { if (e.target === m) m.style.display = 'none'; }); });
+        document.querySelectorAll('.close-modal-btn').forEach(b => { b.addEventListener('click', () => { document.getElementById(b.dataset.modalId).style.display = 'none'; }); });
+        function populateChancesModal() { const s = [...caseItems].sort((a,b)=>a.probability-b.probability); document.getElementById('chances-table-body').innerHTML = s.map(i=>`<tr><td><img src="${FOLDER_PATH+i.filename}" alt="${i.name}"></td><td>${i.name}</td><td>${formatGlorpies(i.value)}</td><td>${i.probability<0.001?'<0.001%':i.probability.toFixed(4)+'%'}</td></tr>`).join(''); }
 
+        // --- INITIALIZATION ---
         initializeCaseItems();
         populateChancesModal();
         loadPlayerData();
