@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Glorp Case Opener</title>
+    <title>Glorp Case Opener - Weighted Drops</title>
     <style>
         :root {
             --primary-bg: #1a1c20;
@@ -152,40 +152,33 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // --- CONFIGURATION ---
         const FOLDER_PATH = 'glorp-case/';
         const COOKIE_NAME = 'glorpPlayerData_v3';
 
-        // IMPORTANT: Add all your item filenames here.
-        // The script CANNOT read your folder automatically due to browser security.
-        // It will automatically calculate value, name, and drop chances from this list.
+        // === TWOJA LISTA PLIKÓW ===
+        // Upewnij się, że nazwy tutaj są DOKŁADNIE takie same jak nazwy plików w folderze.
         const itemFilenames = [
             'Glorp-10.png',
             'Glorp-Jam-15.gif',
             'Bday-Glorp-30.gif',
-            'Christmas-Glorp-45.png',
+            'Christmas-Glorp-45.png'
         ];
 
-        // --- GLOBAL VARIABLES ---
         let playerData = { glorpies: 100, inventory: [] };
         let caseItems = [];
         let totalWeight = 0;
 
-        // --- UI ELEMENTS ---
         const balanceDisplay = document.getElementById('balance-display');
         const openCaseBtn = document.getElementById('open-case-btn');
         const showChancesBtn = document.getElementById('show-chances-btn');
         const inventoryGrid = document.getElementById('inventory-grid');
-        
         const resultModal = document.getElementById('result-modal');
         const resultItemImg = document.getElementById('result-item-img');
         const resultItemName = document.getElementById('result-item-name');
         const resultItemValue = document.getElementById('result-item-value');
-
         const chancesModal = document.getElementById('chances-modal');
         const chancesTableBody = document.getElementById('chances-table-body');
 
-        // --- PARSING & FORMATTING ---
         const parseValue = f => parseInt((f.match(/(\d+)\.(png|gif)$/i) || [])[1] || 0, 10);
         const parseName = f => {
             const parts = f.replace(/\.(png|gif)$/i, '').split('-');
@@ -194,26 +187,14 @@
         };
         const formatGlorpies = n => n.toLocaleString('en-US') + ' glorpies';
 
-        // --- WEIGHTED DROP LOGIC ---
         function initializeCaseItems() {
             const itemsWithWeights = itemFilenames.map(filename => {
                 const value = parseValue(filename);
-                if (value === 0) return null; // Ignore invalid items
-                return {
-                    filename,
-                    name: parseName(filename),
-                    value,
-                    // Weight is inversely proportional to value. Cheaper = higher weight.
-                    weight: 1 / value
-                };
-            }).filter(Boolean); // Remove nulls
-
+                if (value === 0) return null;
+                return { filename, name: parseName(filename), value, weight: 1 / value };
+            }).filter(Boolean);
             totalWeight = itemsWithWeights.reduce((sum, item) => sum + item.weight, 0);
-
-            caseItems = itemsWithWeights.map(item => ({
-                ...item,
-                probability: (item.weight / totalWeight) * 100
-            }));
+            caseItems = itemsWithWeights.map(item => ({ ...item, probability: (item.weight / totalWeight) * 100 }));
         }
 
         function selectWeightedItem() {
@@ -221,24 +202,13 @@
             let currentWeight = 0;
             for (const item of caseItems) {
                 currentWeight += item.weight;
-                if (random < currentWeight) {
-                    return item;
-                }
+                if (random < currentWeight) return item;
             }
-            return caseItems[caseItems.length - 1]; // Fallback
+            return caseItems[caseItems.length - 1];
         }
 
-        // --- UI & DATA MANAGEMENT ---
-        const setCookie = (name, val, days) => {
-            let d = new Date();
-            d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
-            document.cookie = `${name}=${JSON.stringify(val)};expires=${d.toUTCString()};path=/;SameSite=Lax`;
-        };
-        const getCookie = name => {
-            const c = document.cookie.split(';').find(row => row.trim().startsWith(name + '='));
-            if (c) try { return JSON.parse(c.split('=')[1]); } catch(e) { return null; }
-            return null;
-        };
+        const setCookie = (name, val, days) => { let d = new Date(); d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000)); document.cookie = `${name}=${JSON.stringify(val)};expires=${d.toUTCString()};path=/;SameSite=Lax`; };
+        const getCookie = name => { const c = document.cookie.split(';').find(row => row.trim().startsWith(name + '=')); if (c) try { return JSON.parse(c.split('=')[1]); } catch(e) { return null; } return null; };
 
         function loadPlayerData() {
             const savedData = getCookie(COOKIE_NAME);
@@ -246,9 +216,7 @@
             updateUI();
         }
 
-        function savePlayerData() {
-            setCookie(COOKIE_NAME, playerData, 365);
-        }
+        function savePlayerData() { setCookie(COOKIE_NAME, playerData, 365); }
 
         function updateUI() {
             balanceDisplay.textContent = formatGlorpies(playerData.glorpies);
@@ -257,13 +225,7 @@
                 inventoryGrid.innerHTML = '<p style="color: #888; text-align: center; width: 100%;">Your inventory is empty.</p>';
             } else {
                 playerData.inventory.forEach((filename, index) => {
-                    inventoryGrid.innerHTML += `
-                        <div class="inventory-item">
-                            <img src="${FOLDER_PATH}${filename}" alt="${parseName(filename)}">
-                            <p class="item-name">${parseName(filename)}</p>
-                            <p class="item-value">${formatGlorpies(parseValue(filename))}</p>
-                            <button class="sell-btn" data-index="${index}">Sell</button>
-                        </div>`;
+                    inventoryGrid.innerHTML += `<div class="inventory-item"><img src="${FOLDER_PATH}${filename}" alt="${parseName(filename)}"><p class="item-name">${parseName(filename)}</p><p class="item-value">${formatGlorpies(parseValue(filename))}</p><button class="sell-btn" data-index="${index}">Sell</button></div>`;
                 });
             }
         }
@@ -280,24 +242,13 @@
             const sortedItems = [...caseItems].sort((a, b) => a.probability - b.probability);
             sortedItems.forEach(item => {
                 const chance = item.probability < 0.001 ? '< 0.001%' : item.probability.toFixed(4) + '%';
-                chancesTableBody.innerHTML += `
-                    <tr>
-                        <td><img src="${FOLDER_PATH}${item.filename}" alt="${item.name}"></td>
-                        <td>${item.name}</td>
-                        <td>${formatGlorpies(item.value)}</td>
-                        <td>${chance}</td>
-                    </tr>`;
+                chancesTableBody.innerHTML += `<tr><td><img src="${FOLDER_PATH}${item.filename}" alt="${item.name}"></td><td>${item.name}</td><td>${formatGlorpies(item.value)}</td><td>${chance}</td></tr>`;
             });
         }
 
-        // --- EVENT LISTENERS ---
         openCaseBtn.addEventListener('click', () => {
-            if (caseItems.length === 0) {
-                alert('Error: No items configured.');
-                return;
-            }
+            if (caseItems.length === 0) { alert('Error: No items configured.'); return; }
             openCaseBtn.disabled = true;
-
             let spinCount = 0;
             const caseImage = document.getElementById('case-image');
             const spinInterval = setInterval(() => {
@@ -306,7 +257,6 @@
                     clearInterval(spinInterval);
                     const wonItem = selectWeightedItem();
                     caseImage.src = FOLDER_PATH + 'case.png';
-                    
                     playerData.inventory.push(wonItem.filename);
                     savePlayerData();
                     updateUI();
@@ -316,7 +266,7 @@
             }, 100);
         });
 
-        inventoryGrid.addEventListener('click', (e) => {
+        inventoryGrid.addEventListener('click', e => {
             if (e.target.classList.contains('sell-btn')) {
                 const index = parseInt(e.target.dataset.index, 10);
                 const filename = playerData.inventory[index];
@@ -329,26 +279,10 @@
             }
         });
         
-        // Modal handling
-        showChancesBtn.addEventListener('click', () => {
-            chancesModal.style.display = 'flex';
-        });
+        showChancesBtn.addEventListener('click', () => { chancesModal.style.display = 'flex'; });
+        document.querySelectorAll('.modal').forEach(modal => { modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; }); });
+        document.querySelectorAll('.close-modal-btn').forEach(btn => { btn.addEventListener('click', () => { document.getElementById(btn.dataset.modalId).style.display = 'none'; }); });
 
-        document.querySelectorAll('.modal').forEach(modal => {
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) { // Click on modal background
-                    modal.style.display = 'none';
-                }
-            });
-        });
-
-        document.querySelectorAll('.close-modal-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.getElementById(btn.dataset.modalId).style.display = 'none';
-            });
-        });
-
-        // --- INITIALIZATION ---
         initializeCaseItems();
         populateChancesModal();
         loadPlayerData();
