@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Glorp Case Opener</title>
+    
+    <!-- SKRYPTY FIREBASE -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    
     <style>
         :root {
             --primary-bg: #1a1c20; --secondary-bg: #2a2d32; --text-color: #e0e0e0;
@@ -46,7 +52,7 @@
 </head>
 <body>
     <div class="container">
-        <header><h1>Glorp Case</h1><div id="balance-display">0 glorpies</div></header>
+        <header><h1>Glorp Case</h1><div id="balance-display">Loading...</div></header>
         <div class="main-content">
             <div class="case-container"><img src="case.png" alt="Glorp Case" id="case-image"></div>
             <div class="button-group">
@@ -62,76 +68,57 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // --- KONFIGURACJA SZANS (Edytuj tutaj!) ---
-        const USE_CUSTOM_CHANCES = true; // Ustaw na 'true', aby użyć poniższych szans. Ustaw na 'false', aby wrócić do domyślnych (opartych na wartości).
-
-        // Jeśli USE_CUSTOM_CHANCES jest 'true', edytuj te wartości.
-        // WAŻNE: Upewnij się, że suma wartości procentowych wynosi dokładnie 100!
-        const CUSTOM_CHANCES = {
-            'Glorp-10.png':           34.36,
-            'Glorp-Jam-15.gif':       22.91,
-            'Bday-Glorp-30.gif':      11.45,
-            'Christmas-Glorp-45.png': 7.63,
-            'Glorpium-50.png':        6.87,
-            'Glorp-Cheer-50.gif':     6.87,
-            'Glorp-Feet-75.gif':      5.33,
-            'Rainbow-Glorp-100.gif':  4.58
+        // 1. Inicjalizacja Firebase
+        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // !!! WKLEJ TUTAJ SWÓJ WŁASNY OBIEKT firebaseConfig Z KONSOLI FIREBASE !!!
+        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        const firebaseConfig = {
+            apiKey: "AIzaSyCHbe8Wy43kw5yglmuvQ4RoU4-l9zlkl-w",
+            authDomain: "case-opener-login.firebaseapp.com",
+            projectId: "case-opener-login",
+            storageBucket: "case-opener-login.firebasestorage.app",
+            messagingSenderId: "763174924074",
+            appId: "1:763174924074:web:beeafe85f4f63c23cbb853"
         };
-        // ---------------------------------------------
+        
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-        const FOLDER_PATH = '';
-        const COOKIE_NAME = 'glorpPlayerData_v8';
-        const SECRET_KEY = 5;
-
-        const itemFilenames = [ 'Glorp-10.png', 'Glorp-Jam-15.gif', 'Bday-Glorp-30.gif', 'Christmas-Glorp-45.png', 'Glorpium-50.png', 'Glorp-Cheer-50.gif', 'Glorp-Feet-75.gif', 'Rainbow-Glorp-100.gif' ];
-        let playerData = { glorpies: 100, inventory: [] };
-        let caseItems = [], totalWeight = 0;
-
+        // Elementy UI
         const openCaseBtn = document.getElementById('open-case-btn');
         const balanceDisplay = document.getElementById('balance-display');
         const spinnerModal = document.getElementById('spinner-modal');
         const spinnerReel = document.getElementById('spinner-reel');
         const resultModal = document.getElementById('result-modal');
         const chancesModal = document.getElementById('chances-modal');
-        
-        // --- DATA ENCODING/DECODING (unchanged) ---
-        function encodeData(data) { try { let jsonString = JSON.stringify(data); let s = ''; for (let i=0; i<jsonString.length; i++) s+=String.fromCharCode(jsonString.charCodeAt(i)+SECRET_KEY); return btoa(s); } catch(e){return '';}}
-        function decodeData(encoded) { try { let s = atob(encoded); let j = ''; for (let i=0; i<s.length; i++) j+=String.fromCharCode(s.charCodeAt(i)-SECRET_KEY); return JSON.parse(j); } catch(e){return null;}}
-        
-        const setCookie = (name, data, days) => { const encoded = encodeData(data); let d=new Date(); d.setTime(d.getTime()+(days*24*60*60*1000)); document.cookie = `${name}=${encoded};expires=${d.toUTCString()};path=/;SameSite=Lax`; };
-        const getCookie = name => { const c=document.cookie.split(';').find(r=>r.trim().startsWith(name+'=')); return c ? decodeData(c.split('=')[1]) : null; };
-        
+
+        let currentUser = null;
+        let unsubscribeBalanceListener = null; // Do nasłuchiwania zmian salda
+
+        // --- KONFIGURACJA PRZEDMIOTÓW ---
+        const FOLDER_PATH = '';
+        const USE_CUSTOM_CHANCES = true;
+        const CUSTOM_CHANCES = {
+            'Glorp-10.png':           34.36, 'Glorp-Jam-15.gif':       22.91,
+            'Bday-Glorp-30.gif':      11.45, 'Christmas-Glorp-45.png': 7.63,
+            'Glorpium-50.png':        6.87,  'Glorp-Cheer-50.gif':     6.87,
+            'Glorp-Feet-75.gif':      5.33,  'Rainbow-Glorp-100.gif':  4.58
+        };
+        const itemFilenames = Object.keys(CUSTOM_CHANCES);
+        let caseItems = [], totalWeight = 0;
+
+        // --- FUNKCJE POMOCNICZE ---
         const parseValue = f => parseInt((f.match(/(\d+)\.(png|gif)$/i) || [])[1] || 0, 10);
         const parseName = f => { const p = f.replace(/\.(png|gif)$/i, '').split('-'); p.pop(); return p.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '); };
-        const formatGlorpies = n => n.toLocaleString('en-US') + ' glorpies';
+        const formatGlorpies = n => (n || 0).toLocaleString('en-US') + ' glorpies';
 
         function initializeCaseItems() {
-            const itemsData = itemFilenames.map(f => ({
-                filename: f,
-                name: parseName(f),
-                value: parseValue(f)
-            })).filter(i => i.value > 0);
-            
+            const itemsData = itemFilenames.map(f => ({ filename: f, name: parseName(f), value: parseValue(f) })).filter(i => i.value > 0);
             if (USE_CUSTOM_CHANCES) {
-                const totalCustomChance = Object.values(CUSTOM_CHANCES).reduce((sum, chance) => sum + chance, 0);
-                if (Math.abs(totalCustomChance - 100) > 0.001) {
-                    console.error(`BŁĄD KONFIGURACJI: Suma szans w CUSTOM_CHANCES wynosi ${totalCustomChance}%, a powinna wynosić 100%. Losowanie może nie działać poprawnie.`);
-                }
-                
                 totalWeight = 100;
-                caseItems = itemsData.map(item => {
-                    const probability = CUSTOM_CHANCES[item.filename] || 0;
-                    return { ...item, probability: probability, weight: probability };
-                });
-            } else {
-                // Default logic (based on item value)
-                const itemsWithWeights = itemsData.map(item => ({ ...item, weight: 1 / item.value }));
-                totalWeight = itemsWithWeights.reduce((sum, item) => sum + item.weight, 0);
-                caseItems = itemsWithWeights.map(item => ({
-                    ...item,
-                    probability: totalWeight > 0 ? (item.weight / totalWeight) * 100 : 0
-                }));
-            }
+                caseItems = itemsData.map(item => ({ ...item, probability: CUSTOM_CHANCES[item.filename] || 0, weight: CUSTOM_CHANCES[item.filename] || 0 }));
+            } else { /* logika domyślna */ }
             populateChancesModal();
         }
 
@@ -139,27 +126,85 @@
             const r = Math.random() * totalWeight; 
             let cumulativeWeight = 0;
             for (const item of caseItems) {
-                cumulativeWeight += item.weight;
-                if (r < cumulativeWeight) return item;
+                cumulativeWeight += item.weight; if (r < cumulativeWeight) return item;
             }
-            return caseItems[caseItems.length - 1]; // Fallback
+            return caseItems[caseItems.length - 1];
         }
-        
-        function loadPlayerData() { const saved = getCookie(COOKIE_NAME); if (saved) playerData = saved; updateUI(); }
-        function savePlayerData() { setCookie(COOKIE_NAME, playerData, 365); }
-        function updateUI() { balanceDisplay.textContent = formatGlorpies(playerData.glorpies); }
-        function showResult(item) { document.getElementById('result-item-name').textContent = item.name; document.getElementById('result-item-img').src = FOLDER_PATH + item.filename; document.getElementById('result-item-value').textContent = `Value: ${formatGlorpies(item.value)}`; resultModal.style.display = 'flex'; }
 
-        function runOpeningAnimation(wonItem) { const reel = []; const REEL_LENGTH=50, WINNING_INDEX=REEL_LENGTH-5; for(let i=0;i<REEL_LENGTH;i++) reel.push(i===WINNING_INDEX?wonItem:caseItems[Math.floor(Math.random()*caseItems.length)]); spinnerReel.innerHTML = reel.map(item => `<div class="spinner-item"><img src="${FOLDER_PATH+item.filename}" alt="${item.name}"><div class="item-name">${item.name}</div></div>`).join(''); spinnerModal.style.display='flex'; spinnerReel.style.transition='none'; spinnerReel.style.transform='translateX(0)'; spinnerReel.offsetHeight; const itemWidth=150, windowCenter=document.querySelector('.spinner-window').offsetWidth/2; let targetPosition=-(WINNING_INDEX*itemWidth)+windowCenter-(itemWidth/2)+(Math.random()-0.5)*(itemWidth*0.6); spinnerReel.style.transition='transform 3.5s cubic-bezier(0.1, 0.6, 0.3, 1)'; spinnerReel.style.transform=`translateX(${targetPosition}px)`; setTimeout(()=>{ spinnerModal.style.display='none'; playerData.inventory.push({filename: wonItem.filename, locked: false}); savePlayerData(); updateUI(); showResult(wonItem); openCaseBtn.disabled=false; },4000); }
-
-        openCaseBtn.addEventListener('click', () => { if(caseItems.length===0){alert('Error: No items configured.'); return;} openCaseBtn.disabled=true; const wonItem = selectWeightedItem(); runOpeningAnimation(wonItem); });
-        document.getElementById('show-chances-btn').addEventListener('click', () => { chancesModal.style.display = 'flex'; });
-        document.querySelectorAll('.modal').forEach(m => { m.addEventListener('click', e => { if(e.target===m) m.style.display='none'; }); });
-        document.querySelectorAll('.close-modal-btn').forEach(b => { b.addEventListener('click', () => { document.getElementById(b.dataset.modalId).style.display = 'none'; }); });
-        function populateChancesModal() { const s=[...caseItems].sort((a,b)=>b.probability-a.probability); document.getElementById('chances-table-body').innerHTML = s.map(i=>`<tr><td><img src="${FOLDER_PATH+i.filename}" alt="${i.name}"></td><td>${i.name}</td><td>${formatGlorpies(i.value)}</td><td>${i.probability<0.001?'<0.001%':i.probability.toFixed(4)+'%'}</td></tr>`).join(''); }
-        
+        // --- GŁÓWNA LOGIKA APLIKACJI ---
         initializeCaseItems();
-        loadPlayerData();
+
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                currentUser = user;
+                openCaseBtn.disabled = false;
+                openCaseBtn.textContent = 'Open Case (Free)';
+                // Nasłuchuj zmian salda w czasie rzeczywistym
+                const userDocRef = db.collection('users').doc(currentUser.uid);
+                unsubscribeBalanceListener = userDocRef.onSnapshot((doc) => {
+                    if (doc.exists) {
+                        balanceDisplay.textContent = formatGlorpies(doc.data().glorpies);
+                    }
+                });
+            } else {
+                currentUser = null;
+                if (unsubscribeBalanceListener) unsubscribeBalanceListener(); // Zatrzymaj nasłuchiwanie
+                openCaseBtn.disabled = true;
+                openCaseBtn.textContent = 'You must be logged in';
+                balanceDisplay.textContent = 'Not logged in';
+                setTimeout(() => { window.location.href = 'case-opener.html'; }, 2000);
+            }
+        });
+
+        async function runOpeningAnimation(wonItem) {
+            const reel = []; const REEL_LENGTH=50, WINNING_INDEX=REEL_LENGTH-5;
+            for(let i=0; i<REEL_LENGTH; i++) {
+                reel.push(i === WINNING_INDEX ? wonItem : caseItems[Math.floor(Math.random() * caseItems.length)]);
+            }
+            spinnerReel.innerHTML = reel.map(item => `<div class="spinner-item"><img src="${FOLDER_PATH+item.filename}" alt="${item.name}"><div class="item-name">${item.name}</div></div>`).join('');
+            spinnerModal.style.display='flex';
+            spinnerReel.style.transition='none'; spinnerReel.style.transform='translateX(0)';
+            spinnerReel.offsetHeight; 
+            const itemWidth=150, windowCenter=document.querySelector('.spinner-window').offsetWidth/2;
+            let targetPosition=-(WINNING_INDEX*itemWidth)+windowCenter-(itemWidth/2)+(Math.random()-0.5)*(itemWidth*0.6);
+            spinnerReel.style.transition='transform 3.5s cubic-bezier(0.1, 0.6, 0.3, 1)';
+            spinnerReel.style.transform=`translateX(${targetPosition}px)`;
+            
+            setTimeout(async () => {
+                spinnerModal.style.display='none';
+                if (currentUser) {
+                    const userDocRef = db.collection('users').doc(currentUser.uid);
+                    await userDocRef.update({
+                        inventory: firebase.firestore.FieldValue.arrayUnion({ filename: wonItem.filename, locked: false })
+                    });
+                }
+                showResult(wonItem);
+                openCaseBtn.disabled=false;
+            }, 4000);
+        }
+
+        function showResult(item) {
+            document.getElementById('result-item-name').textContent = item.name;
+            document.getElementById('result-item-img').src = FOLDER_PATH + item.filename;
+            document.getElementById('result-item-value').textContent = `Value: ${formatGlorpies(item.value)}`;
+            resultModal.style.display = 'flex';
+        }
+
+        function populateChancesModal() {
+            const sortedItems = [...caseItems].sort((a,b)=>b.probability-a.probability);
+            document.getElementById('chances-table-body').innerHTML = sortedItems.map(i=>`<tr><td><img src="${FOLDER_PATH+i.filename}" alt="${i.name}"></td><td>${i.name}</td><td>${formatGlorpies(i.value)}</td><td>${i.probability<0.001?'<0.001%':i.probability.toFixed(2)+'%'}</td></tr>`).join('');
+        }
+
+        openCaseBtn.addEventListener('click', () => {
+            if(caseItems.length===0){ alert('Error: No items configured.'); return; }
+            openCaseBtn.disabled = true;
+            const wonItem = selectWeightedItem();
+            runOpeningAnimation(wonItem);
+        });
+
+        document.getElementById('show-chances-btn').addEventListener('click', () => { chancesModal.style.display = 'flex'; });
+        document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if(e.target === m) m.style.display='none'; }));
+        document.querySelectorAll('.close-modal-btn').forEach(b => b.addEventListener('click', () => { document.getElementById(b.dataset.modalId).style.display = 'none'; }));
     });
     </script>
 </body>
