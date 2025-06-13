@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Glorp Case</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #121212;
+      color: #fff;
+      text-align: center;
+      padding: 20px;
+    }
+    .case {
+      width: 200px;
+      margin: 20px auto;
+      cursor: pointer;
+    }
+    .inventory, .balance {
+      margin-top: 40px;
+    }
+    img.item {
+      width: 100px;
+      margin: 10px;
+    }
+    button.sell {
+      margin-top: 5px;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <h1>Open a Glorp Case!</h1>
+  <p>Click the case below to get a random Glorp.</p>
+  <img src="glorp-case/case.png" alt="Glorp Case" class="case" onclick="openCase()">
+
+  <div class="balance">
+    <h2>Balance: <span id="balance">0</span> glorpies</h2>
+  </div>
+
+  <div class="inventory">
+    <h2>Your Inventory</h2>
+    <div id="inventory"></div>
+  </div>
+
+  <script>
+    const inventoryEl = document.getElementById('inventory');
+    const balanceEl = document.getElementById('balance');
+
+    // Parse price from filename like: glorpkoler-150-000.png
+    function parsePriceFromName(name) {
+      const match = name.match(/-(\d+)-(\d+)/);
+      if (!match) return 0;
+      return parseInt(match[1] + match[2]);
+    }
+
+    // Simulated list of item filenames in glorp-case folder
+    const availableItems = [
+      'glorpkoler-15-00.png',
+      'glorpkoler-50-00.png',
+      'glorpkoler-150-000.png',
+      'glorpkoler-5-00.png'
+    ];
+
+    function getBalance() {
+      return parseInt(localStorage.getItem('glorpies') || '0');
+    }
+
+    function setBalance(val) {
+      localStorage.setItem('glorpies', val);
+      balanceEl.textContent = val;
+    }
+
+    function getInventory() {
+      return JSON.parse(localStorage.getItem('inventory') || '[]');
+    }
+
+    function saveInventory(inv) {
+      localStorage.setItem('inventory', JSON.stringify(inv));
+    }
+
+    function renderInventory() {
+      inventoryEl.innerHTML = '';
+      const inv = getInventory();
+      inv.forEach((item, i) => {
+        const div = document.createElement('div');
+        const img = document.createElement('img');
+        img.src = 'glorp-case/' + item.name;
+        img.alt = item.name;
+        img.className = 'item';
+
+        const btn = document.createElement('button');
+        btn.textContent = `Sell for ${item.price} glorpies`;
+        btn.className = 'sell';
+        btn.onclick = () => {
+          const newInv = getInventory();
+          newInv.splice(i, 1);
+          saveInventory(newInv);
+          setBalance(getBalance() + item.price);
+          renderInventory();
+        };
+
+        div.appendChild(img);
+        div.appendChild(btn);
+        inventoryEl.appendChild(div);
+      });
+    }
+
+    function openCase() {
+      const randomFile = availableItems[Math.floor(Math.random() * availableItems.length)];
+      const price = parsePriceFromName(randomFile);
+      const newItem = { name: randomFile, price };
+
+      const inv = getInventory();
+      inv.push(newItem);
+      saveInventory(inv);
+      alert(`You got ${randomFile}! Worth ${price} glorpies.`);
+      renderInventory();
+    }
+
+    // Init
+    setBalance(getBalance());
+    renderInventory();
+  </script>
+</body>
+</html>
