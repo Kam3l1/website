@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Glorp Case Opener</title>
-    <!-- CSS (bez zmian) -->
     <style>
         :root {
             --primary-bg: #1a1c20; --secondary-bg: #2a2d32; --text-color: #e0e0e0;
@@ -16,7 +15,7 @@
         header { display: flex; justify-content: space-between; align-items: center; background-color: var(--secondary-bg); padding: 10px 20px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px; }
         h1 { margin: 0; color: var(--accent-color); }
         #balance-display { font-size: 1.5em; font-weight: bold; color: var(--gold-color); }
-        .main-content { text-align: center; background-color: var(--secondary-bg); padding: 30px; border-radius: 8px; border: 1px solid var(--border-color); }
+        .main-content { text-align: center; background-color: var(--secondary-bg); padding: 30px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px;}
         .case-container img { max-width: 200px; height: 200px; object-fit: contain; margin-bottom: 20px; }
         .button-group { display: flex; justify-content: center; align-items:center; gap: 15px; }
         .btn { color: white; border: none; padding: 15px 30px; font-size: 1.2em; font-weight: bold; border-radius: 5px; cursor: pointer; transition: background-color 0.2s; text-decoration: none; display: inline-block; }
@@ -25,14 +24,23 @@
         #open-case-btn:disabled { background-color: #555; cursor: not-allowed; }
         #back-btn, #show-chances-btn { background-color: #6c757d; font-size: 1em; padding: 10px 20px;}
         #back-btn:hover, #show-chances-btn:hover { background-color: #5a6268; }
-        .inventory-section { margin-top: 30px; }
-        #inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; background-color: var(--secondary-bg); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); min-height: 150px; }
-        .inventory-item { background-color: var(--primary-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; }
-        .inventory-item img { max-width: 100px; height: 80px; object-fit: contain; margin: 0 auto 10px; }
-        .item-name { font-weight: bold; font-size: 1em; margin-bottom: 5px; word-wrap: break-word; }
-        .item-value { font-size: 0.9em; color: var(--gold-color); margin-bottom: 10px; }
-        .sell-btn { background-color: #e64c4c; color: white; border: none; padding: 8px 12px; font-size: 0.9em; border-radius: 5px; cursor: pointer; width: 100%; }
-        .sell-btn:hover { background-color: #c0392b; }
+        
+        /* --- Chance Configuration --- */
+        #chances-config-section { margin-top: 30px; background-color: var(--secondary-bg); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); }
+        #chances-config-section h2 { margin-top: 0; }
+        #config-items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .config-item { background-color: var(--primary-bg); padding: 15px; border-radius: 5px; text-align: center; }
+        .config-item img { max-width: 80px; height: 60px; object-fit: contain; }
+        .config-item .item-name { font-weight: bold; }
+        .config-item input { width: 80%; margin-top: 10px; padding: 5px; background-color: var(--secondary-bg); color: var(--text-color); border: 1px solid var(--border-color); border-radius: 4px; text-align: center; }
+        .config-controls { display: flex; justify-content: space-between; align-items: center; gap: 15px; }
+        .config-controls .btn { padding: 10px 20px; font-size: 1em; }
+        #total-chance-display { font-weight: bold; }
+        #total-chance-display.invalid { color: #e64c4c; }
+        #total-chance-display.valid { color: #28a745; }
+
+        /* --- Modals --- */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); display: none; justify-content: center; align-items: center; z-index: 1000; }
         #spinner-modal { background-color: rgba(0, 0, 0, 0.9); flex-direction: column; }
         .spinner-window { width: 90%; max-width: 1200px; height: var(--item-height); background-color: var(--primary-bg); border: 2px solid var(--border-color); border-radius: 5px; overflow: hidden; position: relative; }
         .spinner-marker { position: absolute; top: -2px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-top: 15px solid var(--accent-color); z-index: 10; }
@@ -40,13 +48,11 @@
         .spinner-item { width: var(--item-width); height: 100%; flex-shrink: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: var(--secondary-bg); box-sizing: border-box; border-right: 2px solid var(--primary-bg); }
         .spinner-item img { max-width: 90%; max-height: 70%; object-fit: contain; }
         .spinner-item .item-name { font-size: 0.8em; margin-top: 5px; }
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); display: none; justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background-color: var(--secondary-bg); padding: 30px; border-radius: 10px; text-align: center; border: 2px solid var(--accent-color); animation: fadeIn 0.5s; max-height: 80vh; overflow-y: auto; }
+        .modal-content { background-color: var(--secondary-bg); padding: 30px; border-radius: 10px; text-align: center; border: 2px solid var(--accent-color); animation: fadeIn 0.5s; max-height: 80vh; overflow-y: auto; position: relative; }
         .modal-content h2, .modal-content h3 { margin-top: 0; }
         .modal-content img { max-width: 250px; height: 250px; object-fit: contain; margin-bottom: 20px; }
         #chances-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         #chances-table th, #chances-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
-        #chances-table th { background-color: var(--primary-bg); }
         #chances-table img { width: 40px; height: 40px; vertical-align: middle; margin-right: 10px;}
         .close-modal-btn { position: absolute; top: 15px; right: 20px; font-size: 2em; color: #aaa; cursor: pointer; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
@@ -63,7 +69,24 @@
                 <button id="show-chances-btn" class="btn">Show Chances</button>
             </div>
         </div>
-        <div class="inventory-section"><h2>Inventory</h2><div id="inventory-grid"></div></div>
+        
+        <!-- NEW: Chance Configuration Section -->
+        <div id="chances-config-section">
+            <h2>Configure Drop Chances (%)</h2>
+            <p style="font-size: 0.9em; color: #ccc; text-align:center; margin-top:-15px; margin-bottom: 20px;">
+                You can set custom percentage chances for each item. The system will use these values to draw items.
+                The total should ideally be 100%.
+            </p>
+            <div id="config-items-grid"></div>
+            <div class="config-controls">
+                <div>
+                    <button id="save-chances-btn" class="btn" style="background-color: #28a745;">Save Changes</button>
+                    <button id="reset-chances-btn" class="btn" style="background-color: #6c757d;">Reset to Default</button>
+                </div>
+                <div id="total-chance-display">Total: 100%</div>
+            </div>
+        </div>
+
     </div>
     <div id="spinner-modal" class="modal"><div class="spinner-window"><div class="spinner-marker"></div><div id="spinner-reel"></div></div></div>
     <div id="result-modal" class="modal"><div class="modal-content"><h2>You've unboxed:</h2><h3 id="result-item-name"></h3><img id="result-item-img" src="" alt="Won Item"><div id="result-item-value" class="item-value"></div><p>Click anywhere outside to close.</p></div></div>
@@ -72,8 +95,9 @@
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         const FOLDER_PATH = '';
-        const COOKIE_NAME = 'glorpPlayerData_v7'; // Nowa wersja cookie!
-        const SECRET_KEY = 5; // Twój "sekretny" klucz. Możesz tu wpisać inną liczbę.
+        const COOKIE_NAME = 'glorpPlayerData_v8'; // Use new cookie version
+        const SECRET_KEY = 5;
+        const GLORP_CASE_CUSTOM_CHANCES_KEY = 'glorpCaseCustomChances';
 
         const itemFilenames = [ 'Glorp-10.png', 'Glorp-Jam-15.gif', 'Bday-Glorp-30.gif', 'Christmas-Glorp-45.png' ];
         let playerData = { glorpies: 100, inventory: [] };
@@ -81,85 +105,135 @@
 
         const openCaseBtn = document.getElementById('open-case-btn');
         const balanceDisplay = document.getElementById('balance-display');
-        const inventoryGrid = document.getElementById('inventory-grid');
         const spinnerModal = document.getElementById('spinner-modal');
         const spinnerReel = document.getElementById('spinner-reel');
         const resultModal = document.getElementById('result-modal');
         const chancesModal = document.getElementById('chances-modal');
         
-        // --- NOWE FUNKCJE DO KODOWANIA/DEKODOWANIA DANYCH ---
+        // --- NEW: Config Elements ---
+        const configGrid = document.getElementById('config-items-grid');
+        const saveChancesBtn = document.getElementById('save-chances-btn');
+        const resetChancesBtn = document.getElementById('reset-chances-btn');
+        const totalChanceDisplay = document.getElementById('total-chance-display');
 
-        function encodeData(data) {
-            try {
-                let jsonString = JSON.stringify(data);
-                let shiftedString = '';
-                for (let i = 0; i < jsonString.length; i++) {
-                    shiftedString += String.fromCharCode(jsonString.charCodeAt(i) + SECRET_KEY);
-                }
-                return btoa(shiftedString); // Kodowanie do Base64
-            } catch (e) {
-                console.error("Encoding failed:", e);
-                return '';
-            }
-        }
-
-        function decodeData(encodedString) {
-            try {
-                let shiftedString = atob(encodedString); // Dekodowanie z Base64
-                let jsonString = '';
-                for (let i = 0; i < shiftedString.length; i++) {
-                    jsonString += String.fromCharCode(shiftedString.charCodeAt(i) - SECRET_KEY);
-                }
-                return JSON.parse(jsonString);
-            } catch (e) {
-                console.error("Decoding failed, resetting data. Error:", e);
-                return null; // Zwróć null, jeśli dane są uszkodzone lub niepoprawne
-            }
-        }
-
-        // --- ZMODYFIKOWANE FUNKCJE COOKIE ---
-
-        const setCookie = (name, data, days) => {
-            const encodedData = encodeData(data); // Kodujemy dane przed zapisem
-            let d = new Date();
-            d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
-            document.cookie = `${name}=${encodedData};expires=${d.toUTCString()};path=/;SameSite=Lax`;
-        };
+        // --- DATA ENCODING/DECODING (unchanged) ---
+        function encodeData(data) { try { let jsonString = JSON.stringify(data); let s = ''; for (let i=0; i<jsonString.length; i++) s+=String.fromCharCode(jsonString.charCodeAt(i)+SECRET_KEY); return btoa(s); } catch(e){return '';}}
+        function decodeData(encoded) { try { let s = atob(encoded); let j = ''; for (let i=0; i<s.length; i++) j+=String.fromCharCode(s.charCodeAt(i)-SECRET_KEY); return JSON.parse(j); } catch(e){return null;}}
         
-        const getCookie = name => {
-            const c = document.cookie.split(';').find(row => row.trim().startsWith(name + '='));
-            if (c) {
-                const encodedData = c.split('=')[1];
-                return decodeData(encodedData); // Dekodujemy dane po odczycie
-            }
-            return null;
-        };
-        
-        // --- Reszta kodu (drobne zmiany) ---
+        const setCookie = (name, data, days) => { const encoded = encodeData(data); let d=new Date(); d.setTime(d.getTime()+(days*24*60*60*1000)); document.cookie = `${name}=${encoded};expires=${d.toUTCString()};path=/;SameSite=Lax`; };
+        const getCookie = name => { const c=document.cookie.split(';').find(r=>r.trim().startsWith(name+'=')); return c ? decodeData(c.split('=')[1]) : null; };
         
         const parseValue = f => parseInt((f.match(/(\d+)\.(png|gif)$/i) || [])[1] || 0, 10);
-        const parseName = f => { const parts = f.replace(/\.(png|gif)$/i, '').split('-'); parts.pop(); return parts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' '); };
+        const parseName = f => { const p = f.replace(/\.(png|gif)$/i, '').split('-'); p.pop(); return p.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '); };
         const formatGlorpies = n => n.toLocaleString('en-US') + ' glorpies';
 
-        function initializeCaseItems() { /* ... bez zmian ... */ const itemsWithWeights = itemFilenames.map(f => { const v = parseValue(f); if (v === 0) return null; return { filename: f, name: parseName(f), value: v, weight: 1 / v }; }).filter(Boolean); totalWeight = itemsWithWeights.reduce((s, i) => s + i.weight, 0); caseItems = itemsWithWeights.map(i => ({ ...i, probability: (i.weight / totalWeight) * 100 })); }
-        function selectWeightedItem() { /* ... bez zmian ... */ const r = Math.random() * totalWeight; let cw = 0; for (const i of caseItems) { cw += i.weight; if (r < cw) return i; } return caseItems[caseItems.length - 1]; }
+        function initializeCaseItems(useDefaults = false) {
+            let customChances = {};
+            if (!useDefaults) {
+                 try {
+                    const stored = localStorage.getItem(GLORP_CASE_CUSTOM_CHANCES_KEY);
+                    if (stored) customChances = JSON.parse(stored);
+                } catch (e) {
+                    console.error("Could not parse custom chances, using defaults.", e);
+                }
+            }
+           
+            const hasCustomChances = Object.keys(customChances).length > 0 && !useDefaults;
+            totalWeight = 0;
+            
+            const itemsWithWeights = itemFilenames.map(f => {
+                const value = parseValue(f);
+                if (value === 0) return null;
+                // Use custom chance as weight if available, otherwise use default 1/value
+                const weight = hasCustomChances && customChances[f] !== undefined
+                    ? parseFloat(customChances[f])
+                    : (1 / value);
+                
+                totalWeight += weight;
+                return { filename: f, name: parseName(f), value: value, weight: weight };
+            }).filter(Boolean);
+            
+            caseItems = itemsWithWeights.map(item => ({
+                ...item,
+                probability: totalWeight > 0 ? (item.weight / totalWeight) * 100 : 0
+            }));
+
+            // After initialization, update the UI that depends on these values
+            populateChancesModal();
+            populateConfigUI(hasCustomChances);
+        }
+
+        function populateConfigUI(hasCustomChances) {
+            configGrid.innerHTML = '';
+            caseItems.forEach(item => {
+                // For default display, show the calculated probability. For custom, show the saved weight.
+                const displayValue = hasCustomChances ? item.weight.toFixed(4) : item.probability.toFixed(4);
+                
+                const itemEl = document.createElement('div');
+                itemEl.className = 'config-item';
+                itemEl.innerHTML = `
+                    <img src="${FOLDER_PATH + item.filename}" alt="${item.name}">
+                    <p class="item-name">${item.name}</p>
+                    <input type="number" step="0.01" min="0" data-filename="${item.filename}" value="${displayValue}">
+                `;
+                configGrid.appendChild(itemEl);
+            });
+            updateTotalChanceDisplay();
+        }
+        
+        function updateTotalChanceDisplay() {
+            let total = 0;
+            configGrid.querySelectorAll('input').forEach(input => {
+                total += parseFloat(input.value) || 0;
+            });
+            totalChanceDisplay.textContent = `Total: ${total.toFixed(2)}%`;
+            totalChanceDisplay.classList.toggle('valid', Math.abs(total - 100) < 0.01);
+            totalChanceDisplay.classList.toggle('invalid', Math.abs(total - 100) >= 0.01);
+        }
+
+        function selectWeightedItem() {
+            const r = Math.random() * totalWeight; let cw = 0;
+            for (const item of caseItems) {
+                cw += item.weight; if (r < cw) return item;
+            } return caseItems[caseItems.length - 1];
+        }
         
         function loadPlayerData() { const saved = getCookie(COOKIE_NAME); if (saved) playerData = saved; updateUI(); }
         function savePlayerData() { setCookie(COOKIE_NAME, playerData, 365); }
-        function updateUI() { balanceDisplay.textContent = formatGlorpies(playerData.glorpies); inventoryGrid.innerHTML = playerData.inventory.length === 0 ? '<p style="color:#888;text-align:center;width:100%;">Your inventory is empty.</p>' : playerData.inventory.map((f, i) => `<div class="inventory-item"><img src="${FOLDER_PATH+f}" alt="${parseName(f)}"><p class="item-name">${parseName(f)}</p><p class="item-value">${formatGlorpies(parseValue(f))}</p><button class="sell-btn" data-index="${i}">Sell</button></div>`).join(''); }
+        function updateUI() { balanceDisplay.textContent = formatGlorpies(playerData.glorpies); /* Inventory UI is gone */ }
         function showResult(item) { document.getElementById('result-item-name').textContent = item.name; document.getElementById('result-item-img').src = FOLDER_PATH + item.filename; document.getElementById('result-item-value').textContent = `Value: ${formatGlorpies(item.value)}`; resultModal.style.display = 'flex'; }
 
-        function runOpeningAnimation(wonItem) { const reel = []; const REEL_LENGTH = 50, WINNING_INDEX = REEL_LENGTH - 5; for (let i=0; i<REEL_LENGTH; i++) { reel.push(i === WINNING_INDEX ? wonItem : caseItems[Math.floor(Math.random() * caseItems.length)]); } spinnerReel.innerHTML = reel.map(item => `<div class="spinner-item"><img src="${FOLDER_PATH+item.filename}" alt="${item.name}"><div class="item-name">${item.name}</div></div>`).join(''); spinnerModal.style.display = 'flex'; spinnerReel.style.transition = 'none'; spinnerReel.style.transform = 'translateX(0)'; spinnerReel.offsetHeight; const itemWidth=150, windowCenter=document.querySelector('.spinner-window').offsetWidth/2; let targetPosition = -(WINNING_INDEX*itemWidth) + windowCenter - (itemWidth/2) + (Math.random()-0.5)*(itemWidth*0.6); spinnerReel.style.transition = 'transform 3.5s cubic-bezier(0.1, 0.6, 0.3, 1)'; spinnerReel.style.transform = `translateX(${targetPosition}px)`; setTimeout(() => { spinnerModal.style.display='none'; playerData.inventory.push(wonItem.filename); savePlayerData(); updateUI(); showResult(wonItem); openCaseBtn.disabled=false; }, 4000); }
+        function runOpeningAnimation(wonItem) { const reel = []; const REEL_LENGTH=50, WINNING_INDEX=REEL_LENGTH-5; for(let i=0;i<REEL_LENGTH;i++) reel.push(i===WINNING_INDEX?wonItem:caseItems[Math.floor(Math.random()*caseItems.length)]); spinnerReel.innerHTML = reel.map(item => `<div class="spinner-item"><img src="${FOLDER_PATH+item.filename}" alt="${item.name}"><div class="item-name">${item.name}</div></div>`).join(''); spinnerModal.style.display='flex'; spinnerReel.style.transition='none'; spinnerReel.style.transform='translateX(0)'; spinnerReel.offsetHeight; const itemWidth=150, windowCenter=document.querySelector('.spinner-window').offsetWidth/2; let targetPosition=-(WINNING_INDEX*itemWidth)+windowCenter-(itemWidth/2)+(Math.random()-0.5)*(itemWidth*0.6); spinnerReel.style.transition='transform 3.5s cubic-bezier(0.1, 0.6, 0.3, 1)'; spinnerReel.style.transform=`translateX(${targetPosition}px)`; setTimeout(()=>{ spinnerModal.style.display='none'; playerData.inventory.push({filename: wonItem.filename, locked: false}); savePlayerData(); updateUI(); showResult(wonItem); openCaseBtn.disabled=false; },4000); }
 
-        openCaseBtn.addEventListener('click', () => { if (caseItems.length === 0) { alert('Error: No items configured.'); return; } openCaseBtn.disabled = true; const wonItem = selectWeightedItem(); runOpeningAnimation(wonItem); });
-        inventoryGrid.addEventListener('click', e => { if (e.target.classList.contains('sell-btn')) { const i=parseInt(e.target.dataset.index,10), f=playerData.inventory[i]; if(f){ playerData.glorpies += parseValue(f); playerData.inventory.splice(i,1); savePlayerData(); updateUI(); } } });
+        openCaseBtn.addEventListener('click', () => { if(caseItems.length===0){alert('Error: No items configured.'); return;} openCaseBtn.disabled=true; const wonItem = selectWeightedItem(); runOpeningAnimation(wonItem); });
         document.getElementById('show-chances-btn').addEventListener('click', () => { chancesModal.style.display = 'flex'; });
         document.querySelectorAll('.modal').forEach(m => { m.addEventListener('click', e => { if(e.target===m) m.style.display='none'; }); });
         document.querySelectorAll('.close-modal-btn').forEach(b => { b.addEventListener('click', () => { document.getElementById(b.dataset.modalId).style.display = 'none'; }); });
-        function populateChancesModal() { const s=[...caseItems].sort((a,b)=>a.probability-b.probability); document.getElementById('chances-table-body').innerHTML = s.map(i=>`<tr><td><img src="${FOLDER_PATH+i.filename}" alt="${i.name}"></td><td>${i.name}</td><td>${formatGlorpies(i.value)}</td><td>${i.probability<0.001?'<0.001%':i.probability.toFixed(4)+'%'}</td></tr>`).join(''); }
+        function populateChancesModal() { const s=[...caseItems].sort((a,b)=>b.probability-a.probability); document.getElementById('chances-table-body').innerHTML = s.map(i=>`<tr><td><img src="${FOLDER_PATH+i.filename}" alt="${i.name}"></td><td>${i.name}</td><td>${formatGlorpies(i.value)}</td><td>${i.probability<0.001?'<0.001%':i.probability.toFixed(4)+'%'}</td></tr>`).join(''); }
 
+        // --- NEW EVENT LISTENERS FOR CONFIGURATION ---
+        saveChancesBtn.addEventListener('click', () => {
+            const newChances = {};
+            configGrid.querySelectorAll('input').forEach(input => {
+                newChances[input.dataset.filename] = parseFloat(input.value) || 0;
+            });
+            localStorage.setItem(GLORP_CASE_CUSTOM_CHANCES_KEY, JSON.stringify(newChances));
+            alert('Custom chances have been saved!');
+            initializeCaseItems(); // Re-initialize with new custom chances
+        });
+
+        resetChancesBtn.addEventListener('click', () => {
+            if (confirm('Are you sure you want to reset chances to their default values (based on item value)?')) {
+                localStorage.removeItem(GLORP_CASE_CUSTOM_CHANCES_KEY);
+                alert('Chances have been reset to default.');
+                initializeCaseItems(true); // Re-initialize forcing defaults
+            }
+        });
+
+        configGrid.addEventListener('input', updateTotalChanceDisplay);
+        
+        // --- INITIALIZE PAGE ---
         initializeCaseItems();
-        populateChancesModal();
         loadPlayerData();
     });
     </script>
