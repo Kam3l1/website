@@ -1,0 +1,120 @@
+:root {
+    --primary-color: #2c3e50;
+    --secondary-color: #34495e;
+    --accent-color: #e67e22;
+    --text-color: #ecf0f1;
+    /* Rarity Glow Colors */
+    --glow-common: #95a5a6;      /* Grey */
+    --glow-uncommon: #2ecc71;    /* Green */
+    --glow-rare: #3498db;        /* Blue */
+    --glow-epic: #9b59b6;        /* Purple */
+    --glow-legendary: #f1c40f;   /* Gold */
+}
+
+/* ... (reszta stylów body, header, tabs, btn pozostaje taka sama jak poprzednio) ... */
+body { font-family: Arial, sans-serif; background-color: var(--primary-color); color: var(--text-color); margin: 0; text-align: center; }
+header { background-color: var(--secondary-color); padding: 1rem; border-bottom: 3px solid var(--accent-color); }
+.user-info { position: absolute; top: 1.5rem; right: 2rem; font-size: 1.2rem; }
+.tabs { display: flex; justify-content: center; background-color: var(--secondary-color); padding: 0; margin: 0; }
+.tab-link { padding: 1rem 2rem; border: none; background: none; color: var(--text-color); cursor: pointer; font-size: 1.1rem; opacity: 0.7; transition: opacity 0.3s, border-bottom 0.3s; border-bottom: 3px solid transparent; }
+.tab-link.active { opacity: 1; border-bottom: 3px solid var(--accent-color); }
+.tab-content { display: none; padding: 2rem; }
+.tab-content.active { display: block; }
+.btn { background-color: var(--accent-color); color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; border: none; cursor: pointer; font-size: 1rem; transition: background-color 0.3s; }
+.btn:hover { background-color: #d35400; }
+.btn:disabled { background-color: #7f8c8d; cursor: not-allowed; }
+
+/* Cases List */
+.cases-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2rem;
+}
+.case-item {
+    background-color: var(--secondary-color);
+    border: 1px solid #4a637e;
+    border-radius: 8px;
+    padding: 1.5rem;
+    width: 200px;
+}
+.case-item img { max-width: 150px; height: auto; }
+.case-item h3 { margin-top: 1rem; }
+.case-item p { font-weight: bold; }
+
+
+/* Inventory and Rarity Glows */
+#inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1.5rem;
+}
+
+.inventory-item {
+    background-color: var(--secondary-color);
+    border-radius: 8px;
+    padding: 1rem;
+    position: relative;
+    border: 1px solid transparent; /* Base border */
+    transition: transform 0.2s;
+}
+.inventory-item:hover { transform: translateY(-5px); }
+
+.inventory-item.locked { border-left: 5px solid #2980b9; }
+
+.inventory-item .item-image-wrapper {
+    height: 120px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.inventory-item img {
+    max-width: 100px;
+    max-height: 100px;
+    height: auto;
+    filter: drop-shadow(0 0 0 transparent); /* Base filter */
+    transition: filter 0.3s;
+}
+
+/* Rarity Glow Styles using drop-shadow filter */
+.rarity-common img { filter: drop-shadow(0 0 5px var(--glow-common)); }
+.rarity-uncommon img { filter: drop-shadow(0 0 8px var(--glow-uncommon)); }
+.rarity-rare img { filter: drop-shadow(0 0 12px var(--glow-rare)); }
+.rarity-epic img { filter: drop-shadow(0 0 15px var(--glow-epic)); }
+.rarity-legendary img { filter: drop-shadow(0 0 20px var(--glow-legendary)); }
+.rarity-mythical img {
+    animation: rainbow-glow 4s linear infinite;
+}
+
+@keyframes rainbow-glow {
+    0%   { filter: drop-shadow(0 0 15px #ff0000); }
+    15%  { filter: drop-shadow(0 0 15px #ff7f00); }
+    30%  { filter: drop-shadow(0 0 15px #ffff00); }
+    45%  { filter: drop-shadow(0 0 15px #00ff00); }
+    60%  { filter: drop-shadow(0 0 15px #0000ff); }
+    75%  { filter: drop-shadow(0 0 15px #4b0082); }
+    90%  { filter: drop-shadow(0 0 15px #8b00ff); }
+    100% { filter: drop-shadow(0 0 15px #ff0000); }
+}
+
+
+.item-actions { margin-top: 10px; display: flex; justify-content: space-around; }
+.sell-btn { background-color: #c0392b; }
+.lock-btn { background-color: #2980b9; }
+
+
+/* Case Opening Animation */
+.case-opening-page .opening-container { padding-top: 50px; }
+.roulette-wrapper { width: 80%; max-width: 1000px; margin: 2rem auto; border: 3px solid var(--accent-color); overflow: hidden; position: relative; }
+.pointer { width: 3px; height: 100%; background-color: red; position: absolute; left: 50%; transform: translateX(-50%); z-index: 2; }
+#roulette-strip { display: flex; }
+#roulette-strip.animate { transition: transform 3s cubic-bezier(0.1, 0.6, 0.3, 1); }
+.roulette-item { flex-shrink: 0; width: 150px; height: 150px; display: flex; justify-content: center; align-items: center; background-color: var(--secondary-color); }
+.roulette-item img { max-width: 120px; max-height: 120px; }
+
+/* Result display */
+#result-display img { max-width: 200px; margin: 1rem 0; }
+#result-item-wrapper img { max-width: 250px; max-height: 250px; }
+.back-link { display: inline-block; margin-top: 2rem; color: var(--text-color); }
