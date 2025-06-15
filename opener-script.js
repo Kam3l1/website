@@ -4,13 +4,13 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
 import { getFirestore, doc, getDoc, setDoc, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
 // =================================================================
-// YOUR FIREBASE CONFIGURATION (Zaczerpnięte z Twojego zapytania)
+// YOUR FIREBASE CONFIGURATION
 // =================================================================
 const firebaseConfig = {
-  apiKey: "AIzaSyD05uuzGixPPd44HMgoUexMhqYfkP_p_Lc", // ZABEZPIECZ TEN KLUCZ W GOOGLE CLOUD!
+  apiKey: "AIzaSyD05uuzGixPPd44HMgoUexMhqYfkP_p_Lc",
   authDomain: "case-opening-login.firebaseapp.com",
   projectId: "case-opening-login",
-  storageBucket: "case-opening-login.appspot.com", // Poprawka: usunąłem 'firebasestorage'
+  storageBucket: "case-opening-login.appspot.com",
   messagingSenderId: "330702259311",
   appId: "1:330702259311:web:8a16ee361963cdd8f8399a"
 };
@@ -26,14 +26,13 @@ const db = getFirestore(app);
 let currentUser = null;
 let userData = null;
 
-// Rarity tiers based on item price
 const rarityTiers = {
     common: { minPrice: 0, class: 'rarity-common' },
     uncommon: { minPrice: 40, class: 'rarity-uncommon' },
     rare: { minPrice: 70, class: 'rarity-rare' },
     epic: { minPrice: 100, class: 'rarity-epic' },
-    legendary: { minPrice: 250, class: 'rarity-legendary' }, // Example for very high-value items
-    mythical: { minPrice: 99, class: 'rarity-mythical' }, // A special tier for Rainbow Glorp
+    legendary: { minPrice: 250, class: 'rarity-legendary' },
+    mythical: { minPrice: 99, class: 'rarity-mythical' },
 };
 
 const cases = {
@@ -41,67 +40,60 @@ const cases = {
         id: 'glorpCase',
         name: 'Free Glorp Case',
         price: 0,
-        image: 'glorpcase/case.png',
+        image: '/website/glorpcase/case.png', // POPRAWIONA ŚCIEŻKA
         items: [
-            { file: 'glorpcase/Glorp-10.png' }, // Auto-weight based on price
-            { file: 'glorpcase/Glorp-Jam-15.gif', weight: 40 }, // Custom higher weight
-            { file: 'glorpcase/Christmas-Glorp-45.png' },
-            { file: 'glorpcase/Glorpium-50.png', weight: 15 },
+            { file: '/website/glorpcase/Glorp-10.png' }, // POPRAWIONA ŚCIEŻKA
+            { file: '/website/glorpcase/Glorp-Jam-15.gif', weight: 40 }, // POPRAWIONA ŚCIEŻKA
+            { file: '/website/glorpcase/Christmas-Glorp-45.png' }, // POPRAWIONA ŚCIEŻKA
+            { file: '/website/glorpcase/Glorpium-50.png', weight: 15 }, // POPRAWIONA ŚCIEŻKA
         ]
     },
     testCase: {
         id: 'testCase',
         name: 'Super Test Case',
         price: 500,
-        image: 'glorpcase/test-case.png', // Create this image
+        image: '/website/glorpcase/test-case.png', // POPRAWIONA ŚCIEŻKA
         items: [
-            { file: 'glorpcase/Glorp-Cheer-50.gif' },
-            { file: 'glorpcase/Glorp-Feet-75.gif' },
-            { file: 'glorpcase/Rainbow-Glorp-100.gif', weight: 5 }, // Very rare
+            { file: '/website/glorpcase/Glorp-Cheer-50.gif' }, // POPRAWIONA ŚCIEŻKA
+            { file: '/website/glorpcase/Glorp-Feet-75.gif' }, // POPRAWIONA ŚCIEŻKA
+            { file: '/website/glorpcase/Rainbow-Glorp-100.gif', weight: 5 }, // POPRAWIONA ŚCIEŻKA
         ]
     }
 };
 
 // =================================================================
-// HELPER FUNCTIONS
+// HELPER FUNCTIONS (bez zmian)
 // =================================================================
 
-// Parses "Item Name-Price.ext" from a file path
 function parseItemInfo(filePath) {
     const fileName = filePath.split('/').pop();
     const nameAndPrice = fileName.substring(0, fileName.lastIndexOf('.'));
     const parts = nameAndPrice.split('-');
     const price = parseInt(parts.pop(), 10);
     const name = parts.join(' ');
+    // Zmieniamy filePath na oryginalny, z pełną ścieżką
     return { name, price, file: filePath };
 }
 
-// Determines rarity class based on price. A more robust way than drop %
-// because an item's value is constant, while its drop % can change per case.
 function getRarityClassByPrice(price) {
-    // Special case for rainbow
     if (price === 100) return rarityTiers.mythical.class;
-    
     let highestTier = 'common';
     for (const tier in rarityTiers) {
         if (price >= rarityTiers[tier].minPrice) {
             highestTier = tier;
         }
     }
-    // Mythical is special, don't auto-assign it
     return rarityTiers[highestTier].class === rarityTiers.mythical.class ? rarityTiers.legendary.class : rarityTiers[highestTier].class;
 }
 
-// Calculates a default "weight" if not provided. Lower price = higher weight = more common.
 function calculateDefaultWeight(price) {
     if (price === 0) return 100;
     return Math.max(1, Math.round(100 / price));
 }
 
 // =================================================================
-// AUTH & USER DATA
+// AUTH & USER DATA (bez zmian)
 // =================================================================
-
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         currentUser = user;
@@ -110,7 +102,7 @@ onAuthStateChanged(auth, async (user) => {
 
         if (!userDoc.exists()) {
             const newUserData = {
-                glorpies: 1000, // Starting with more to test the paid case
+                glorpies: 1000,
                 inventory: [],
                 username: `user_${currentUser.uid.substring(0, 6)}`
             };
@@ -142,9 +134,8 @@ function updateBalanceUI() {
 }
 
 // =================================================================
-// PAGE INITIALIZATION ROUTER
+// PAGE INITIALIZATION ROUTER (bez zmian)
 // =================================================================
-
 function initializePage() {
     updateBalanceUI();
     if (document.body.classList.contains('case-opening-page')) {
@@ -190,27 +181,25 @@ function displayCases() {
             <img src="${caseData.image}" alt="${caseData.name}">
             <h3>${caseData.name}</h3>
             <p>${caseData.price === 0 ? 'FREE' : `${caseData.price} Glorpies`}</p>
-            <a href="glorp-case.html?case=${caseId}" class="btn">Open</a>
+            <!-- POPRAWIONA ŚCIEŻKA -->
+            <a href="/website/glorp-case.html?case=${caseId}" class="btn">Open</a>
         `;
         container.appendChild(caseElement);
     }
 }
 
-function displayInventory() {
+function displayInventory() { /* Ta funkcja nie zawiera ścieżek, bez zmian */
     const grid = document.getElementById('inventory-grid');
     if (!grid) return;
     grid.innerHTML = '';
-
     if (!userData || userData.inventory.length === 0) {
         grid.innerHTML = '<p>Your inventory is empty. Open some cases!</p>';
         return;
     }
-
     userData.inventory.forEach((item, index) => {
         const rarityClass = getRarityClassByPrice(item.price);
         const itemElement = document.createElement('div');
         itemElement.className = `inventory-item ${rarityClass} ${item.locked ? 'locked' : ''}`;
-        
         itemElement.innerHTML = `
             <div class="item-image-wrapper">
                 <img src="${item.file}" alt="${item.name}">
@@ -224,40 +213,35 @@ function displayInventory() {
         `;
         grid.appendChild(itemElement);
     });
-
     grid.querySelectorAll('.sell-btn').forEach(btn => btn.addEventListener('click', sellItem));
     grid.querySelectorAll('.lock-btn').forEach(btn => btn.addEventListener('click', toggleLockItem));
 }
 
-async function sellItem(event) {
+async function sellItem(event) { /* bez zmian */
     const index = parseInt(event.target.dataset.index);
     const item = userData.inventory[index];
     if (item.locked) return;
-
     userData.glorpies += item.price;
     userData.inventory.splice(index, 1);
-    
     await saveUserData();
     updateBalanceUI();
     displayInventory();
 }
 
-async function toggleLockItem(event) {
+async function toggleLockItem(event) { /* bez zmian */
     const index = parseInt(event.target.dataset.index);
     userData.inventory[index].locked = !userData.inventory[index].locked;
     await saveUserData();
     displayInventory();
 }
 
-async function displayLeaderboard() {
+async function displayLeaderboard() { /* bez zmian */
     const list = document.getElementById('leaderboard-list');
     if (!list) return;
     list.innerHTML = '<p>Loading leaderboard...</p>';
-
     try {
         const q = query(collection(db, "users"), orderBy("glorpies", "desc"), limit(10));
         const querySnapshot = await getDocs(q);
-        
         list.innerHTML = '';
         let rank = 1;
         querySnapshot.forEach(doc => {
@@ -288,7 +272,8 @@ function setupCaseOpeningPage() {
     const caseData = cases[caseId];
 
     if (!caseData) {
-        document.body.innerHTML = '<h1>Case not found!</h1><a href="case-opener.html">Go back</a>';
+        // POPRAWIONA ŚCIEŻKA
+        document.body.innerHTML = '<h1>Case not found!</h1><a href="/website/case-opener.html">Go back</a>';
         return;
     }
 
@@ -298,17 +283,14 @@ function setupCaseOpeningPage() {
     openBtn.addEventListener('click', () => openCase(caseData));
 }
 
-function getRandomItem(caseData) {
-    // First, process items to get full info and ensure they have a weight
+function getRandomItem(caseData) { /* bez zmian */
     const processedItems = caseData.items.map(item => {
         const info = parseItemInfo(item.file);
         const weight = item.weight || calculateDefaultWeight(info.price);
         return { ...info, weight };
     });
-
     const totalWeight = processedItems.reduce((sum, item) => sum + item.weight, 0);
     let random = Math.random() * totalWeight;
-
     for (const item of processedItems) {
         if (random < item.weight) {
             return item;
@@ -317,54 +299,40 @@ function getRandomItem(caseData) {
     }
 }
 
-async function openCase(caseData) {
+async function openCase(caseData) { /* bez zmian */
     const openBtn = document.getElementById('open-case-btn');
     if (openBtn.disabled) return;
-    
     if (userData.glorpies < caseData.price) {
         alert("Not enough Glorpies!");
         return;
     }
-
     openBtn.disabled = true;
     openBtn.textContent = 'Opening...';
-
-    // Deduct price and update UI immediately
     userData.glorpies -= caseData.price;
     updateBalanceUI();
-    
     const rouletteStrip = document.getElementById('roulette-strip');
     rouletteStrip.innerHTML = '';
     rouletteStrip.classList.remove('animate');
     rouletteStrip.style.transform = 'translateX(0)';
-
     const ROULETTE_LENGTH = 50;
-    const WINNING_INDEX = ROULETTE_LENGTH - 4; // Stop on the 4th item from the end
-    
+    const WINNING_INDEX = ROULETTE_LENGTH - 4;
     let stripItems = [];
     for (let i = 0; i < ROULETTE_LENGTH; i++) {
         const itemInfo = getRandomItem(caseData);
         stripItems.push(itemInfo);
-        
         const itemElement = document.createElement('div');
         itemElement.className = `roulette-item`;
         itemElement.innerHTML = `<img src="${itemInfo.file}" alt="${itemInfo.name}">`;
         rouletteStrip.appendChild(itemElement);
     }
-    
     const winningItem = stripItems[WINNING_INDEX];
-
-    // Wait for the browser to render the strip before animating
     await new Promise(resolve => setTimeout(resolve, 100));
-
-    const itemWidth = 150; // As defined in CSS
+    const itemWidth = 150;
     const containerWidth = rouletteStrip.parentElement.offsetWidth;
     const randomOffset = (Math.random() - 0.5) * (itemWidth * 0.8);
     const finalPosition = -(WINNING_INDEX * itemWidth - containerWidth / 2 + itemWidth / 2 - randomOffset);
-    
     rouletteStrip.classList.add('animate');
     rouletteStrip.style.transform = `translateX(${finalPosition}px)`;
-
     setTimeout(async () => {
         userData.inventory.push({
             name: winningItem.name,
@@ -372,17 +340,13 @@ async function openCase(caseData) {
             file: winningItem.file,
             locked: false
         });
-        
         await saveUserData();
-        
         const resultWrapper = document.getElementById('result-item-wrapper');
         const rarityClass = getRarityClassByPrice(winningItem.price);
-        resultWrapper.className = `inventory-item ${rarityClass}`; // Reuse inventory-item class for consistency
+        resultWrapper.className = `inventory-item ${rarityClass}`;
         resultWrapper.innerHTML = `<img src="${winningItem.file}" alt="${winningItem.name}">`;
-        
         document.getElementById('result-item-name').textContent = winningItem.name;
         document.getElementById('result-display').style.display = 'block';
         openBtn.style.display = 'none';
-
-    }, 3100); // Must be slightly longer than CSS transition
+    }, 3100);
 }
