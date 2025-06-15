@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glorp Case Opener</title>
+    <!-- Odwołanie do poprawnego pliku CSS -->
+    <link rel="stylesheet" href="opener-style.css">
+</head>
+<body>
+
+    <header>
+        <h1>Glorp Case Opener</h1>
+        <div class="user-info">
+            <!-- Balans będzie tutaj wstawiony przez JavaScript -->
+            <span>Balance: <strong id="glorpies-balance">0</strong> Glorpies</span>
+        </div>
+    </header>
+
+    <!-- Nawigacja z zakładkami -->
+    <nav class="tabs">
+        <button class="tab-link active" data-tab="cases">Cases</button>
+        <button class="tab-link" data-tab="inventory">Inventory</button>
+        <button class="tab-link" data-tab="leaderboard">Leaderboard</button>
+    </nav>
+
+    <main>
+        <!-- Zakładka ze Skrzynkami -->
+        <div id="cases" class="tab-content active">
+            <h2>Available Cases</h2>
+            <!-- JavaScript wstawi tutaj listę skrzynek -->
+            <div id="cases-container" class="cases-list">
+                <p>Loading cases...</p>
+            </div>
+        </div>
+
+        <!-- Zakładka z Ekwipunkiem -->
+        <div id="inventory" class="tab-content">
+            <h2>Your Inventory</h2>
+            <!-- JavaScript wstawi tutaj przedmioty z ekwipunku -->
+            <div id="inventory-grid">
+                <p>Loading inventory...</p>
+            </div>
+        </div>
+
+        <!-- Zakładka z Leaderboardem -->
+        <div id="leaderboard" class="tab-content">
+            <h2>Top 10 Players</h2>
+            <!-- JavaScript wstawi tutaj ranking -->
+            <ol id="leaderboard-list">
+                <p>Loading leaderboard...</p>
+            </ol>
+        </div>
+    </main>
+
+    <!-- Odwołanie do poprawnego pliku JavaScript jako moduł -->
+    <script type="module" src="opener-script.js"></script>
+    
+</body>
+</html>
