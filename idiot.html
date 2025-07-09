@@ -5,51 +5,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>you are an idiot</title>
     <style>
-        /* Styl dla całej strony */
         body, html {
             height: 100%;
             margin: 0;
             padding: 0;
-            background-color: #000; /* Czarne tło */
-            color: #fff; /* Biały kolor tekstu */
+            background-color: #000;
+            color: #fff;
             display: flex;
-            justify-content: center; /* Wyśrodkowanie w poziomie */
-            align-items: center; /* Wyśrodkowanie w pionie */
-            font-family: 'Comic Sans MS', cursive, sans-serif; /* Czcionka dla klimatu */
-            overflow: hidden; /* Ukrycie pasków przewijania */
+            justify-content: center;
+            align-items: center;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            overflow: hidden;
+            cursor: pointer; 
         }
 
-        /* Kontener dla zawartości, aby wszystko było razem */
         .content {
             text-align: center;
         }
 
-        /* Styl dla napisu */
         h1 {
-            font-size: 3em; /* Duży rozmiar czcionki */
-            margin-bottom: 20px; /* Odstęp pod napisem */
+            font-size: 3em;
+            margin-bottom: 20px;
         }
 
-        /* Styl dla obrazka GIF */
         img {
-            max-width: 90%;
-            border: 3px solid white; /* Opcjonalna biała ramka */
+            max-height: 70vh;
+            max-width: 95vw;
         }
     </style>
 </head>
 <body>
 
     <div class="content">
-        <!-- Napis nad obrazkiem -->
         <h1>you are an idiot</h1>
-
-        <!-- Obrazek GIF -->
         <img src="GAGAGA.gif" alt="GAGAGA animated GIF">
     </div>
 
-    <!-- Niewidoczny element audio z zapętleniem i autoodtwarzaniem -->
-    <!-- Uwaga: Nowoczesne przeglądarki mogą blokować autoodtwarzanie dźwięku, dopóki użytkownik nie kliknie na stronie. -->
-    <audio src="GAGAGA.mp3" autoplay loop hidden></audio>
+    <audio id="idiotSound" src="GAGAGA.mp3" loop hidden></audio>
+
+    <script>
+        const audio = document.getElementById('idiotSound');
+        
+        function playSound() {
+            const promise = audio.play();
+            if (promise !== undefined) {
+                promise.then(_ => {
+                    document.body.removeEventListener('click', playSound);
+                }).catch(error => {
+                    console.log("Autoplay was prevented.");
+                });
+            }
+        }
+
+        document.body.addEventListener('click', playSound);
+    </script>
 
 </body>
 </html>
