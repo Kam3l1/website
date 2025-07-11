@@ -76,10 +76,27 @@
         const startScreen = document.getElementById('start-screen');
         const mainContent = document.getElementById('main-content');
         const audio = document.getElementById('idiotSound');
+        const docElement = document.documentElement;
+        let isTrapped = false;
+
+        function enterFullscreen() {
+            if (docElement.requestFullscreen) {
+                docElement.requestFullscreen();
+            } else if (docElement.mozRequestFullScreen) { /* Firefox */
+                docElement.mozRequestFullScreen();
+            } else if (docElement.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
+                docElement.webkitRequestFullscreen();
+            } else if (docElement.msRequestFullscreen) { /* IE/Edge */
+                docElement.msRequestFullscreen();
+            }
+        }
         
         function revealContent() {
             startScreen.style.display = 'none';
             mainContent.style.display = 'block';
+            isTrapped = true;
+            
+            enterFullscreen();
             
             const promise = audio.play();
             if (promise !== undefined) {
@@ -88,6 +105,12 @@
             
             document.body.removeEventListener('click', revealContent);
         }
+
+        document.addEventListener('fullscreenchange', () => {
+            if (isTrapped && !document.fullscreenElement) {
+                enterFullscreen();
+            }
+        });
 
         document.body.addEventListener('click', revealContent);
     </script>
