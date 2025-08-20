@@ -1,79 +1,130 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PC Specs</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg-color: #121215;
+            --primary-color: #1a1a1d;
+            --secondary-color: #2c2c30;
+            --accent-color: #f0b90b;
+            --text-color: #e0e0e0;
+        }
+
         body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             margin: 0;
-            padding: 0;
-            background-color: #121212;
-            font-family: Arial, sans-serif;
-            color: white;
-            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+            opacity: 0;
+            animation: fadeIn 1s forwards;
         }
-        
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
         .specs-container {
-            background-color: #1e1e1e;
-            border-radius: 10px;
-            padding: 30px;
-            max-width: 600px;
-            width: 90%;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            background-color: var(--primary-color);
+            border-radius: 12px;
+            padding: 40px;
+            width: 100%;
+            max-width: 700px;
+            border: 1px solid var(--secondary-color);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
         }
         
         h1 {
             text-align: center;
+            margin-top: 0;
+            margin-bottom: 35px;
+            color: var(--text-color);
+            font-size: 2.5rem;
+            font-weight: 600;
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 15px;
+            display: inline-block;
+        }
+        
+        .header-container {
+            text-align: center;
             margin-bottom: 30px;
-            color: #ffd700;
-            font-size: 32px;
         }
         
         .specs-list {
             list-style-type: none;
             padding: 0;
+            margin: 0;
         }
         
         .specs-list li {
-            padding: 12px 0;
-            font-size: 18px;
-            border-bottom: 1px solid #333;
+            background-color: var(--secondary-color);
+            padding: 18px 25px;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+        
+        .specs-list li:hover {
+            transform: translateX(5px);
+            background-color: #3a3a40;
         }
         
         .specs-list li:last-child {
-            border-bottom: none;
+            margin-bottom: 0;
         }
         
         .specs-list li i {
-            margin-right: 15px;
-            color: #ffd700;
-            width: 20px;
+            margin-right: 20px;
+            color: var(--accent-color);
+            width: 24px;
             text-align: center;
+            font-size: 1.2em;
         }
         
         .back-button {
-            display: block;
+            display: inline-block;
             text-align: center;
-            margin-top: 30px;
-            color: #ffd700;
+            margin-top: 40px;
+            color: var(--accent-color);
             text-decoration: none;
-            font-size: 18px;
-            transition: transform 0.3s;
+            font-size: 1.1rem;
+            font-weight: 600;
+            padding: 12px 24px;
+            border: 2px solid var(--accent-color);
+            border-radius: 8px;
+            transition: background-color 0.3s, color 0.3s;
         }
         
         .back-button:hover {
-            transform: scale(1.1);
+            background-color: var(--accent-color);
+            color: var(--bg-color);
         }
+
+        .back-button-container {
+            text-align: center;
+        }
+
     </style>
 </head>
 <body>
     <div class="specs-container">
-        <h1>PC Specs</h1>
+        <div class="header-container">
+            <h1>PC Specs</h1>
+        </div>
         <ul class="specs-list">
             <li><i class="fas fa-microchip"></i>Ryzen 5 5600</li>
             <li><i class="fas fa-desktop"></i>RTX 3060 Gaming OC 12GB</li>
@@ -84,9 +135,11 @@
             <li><i class="fas fa-hdd"></i>PNY CS1030 500GB</li>
             <li><i class="fas fa-hdd"></i>PNY CS900 120GB SSD</li>
         </ul>
-        <a href="index.html" class="back-button">
-            <i class="fas fa-arrow-left"></i> Back to Home
-        </a>
+        <div class="back-button-container">
+            <a href="index.html" class="back-button">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
     </div>
 </body>
 </html>
