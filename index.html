@@ -94,6 +94,16 @@
         .profile-header img {
             width: 120px;
             height: 120px;
+            animation: coin-spin 4s linear infinite;
+        }
+        
+        @keyframes coin-spin {
+            from {
+                transform: rotateY(0deg);
+            }
+            to {
+                transform: rotateY(360deg);
+            }
         }
 
         .profile-header h1 {
@@ -193,7 +203,7 @@
     <div id="main-content-wrapper" style="visibility:hidden;">
         <div class="container">
             <div class="profile-header">
-                <img src="emoji.gif" alt="Animated emoji">
+                <img src="emoji.png" alt="Spinning emoji">
                 <h1>Kam3l</h1>
             </div>
             <div class="tiles-grid">
