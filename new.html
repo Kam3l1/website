@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homepage - Kam3l</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #121215;
+            --primary-color: #1a1a1d;
+            --secondary-color: #2c2c30;
+            --accent-color: #f0b90b;
+            --text-color: #e0e0e0;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #loader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.8s ease-in-out, visibility 0.8s;
+        }
+
+        #loader-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        
+        #verification-message {
+            font-size: 18px;
+            margin-bottom: 25px;
+            text-align: center;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+        
+        #turnstile-verification-widget {
+             opacity: 1;
+             transition: opacity 0.5s ease;
+        }
+        
+        #main-content-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 1s forwards 0.5s;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 900px;
+        }
+        
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .profile-header {
+            margin-bottom: 40px;
+        }
+
+        .profile-header h1 {
+            font-size: 3.5rem;
+            font-weight: 600;
+            margin: 0;
+            letter-spacing: 2px;
+        }
+        
+        .profile-header img {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 15px;
+            animation: spin 10s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .tiles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 25px;
+            justify-content: center;
+        }
+
+        .tile {
+            background-color: var(--primary-color);
+            border-radius: 12px;
+            padding: 30px;
+            text-decoration: none;
+            color: var(--text-color);
+            border: 1px solid var(--secondary-color);
+            transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tile:hover {
+            transform: translateY(-8px);
+            background-color: var(--secondary-color);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        }
+
+        .tile i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: var(--accent-color);
+            transition: transform 0.3s ease;
+        }
+        
+        .tile:hover i {
+            transform: scale(1.1);
+        }
+
+        .tile h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .tile.mystery {
+            background: linear-gradient(45deg, #2a0a0a, #0a0a2a);
+        }
+
+        .tile.mystery:hover {
+             background: linear-gradient(45deg, #4d1a1a, #1a1a4d);
+        }
+    </style>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onloadTurnstileCallback" defer></script>
+</head>
+<body>
+    <div id="loader-overlay">
+        <div id="verification-message">Verifying...</div>
+        <div id="turnstile-verification-widget"></div>
+    </div>
+    <div id="main-content-wrapper" style="display:none;">
+        <div class="container">
+            <div class="profile-header">
+                 <img src="emoji.png" alt="Rotating emoji">
+                <h1>Kam3l</h1>
+            </div>
+            <div class="tiles-grid">
+                <a href="https://steamcommunity.com/profiles/76561199050578760" target="_blank" class="tile">
+                    <i class="fab fa-steam"></i>
+                    <h2>Steam</h2>
+                </a>
+                <a href="https://x.com/Kam3l__" target="_blank" class="tile">
+                    <i class="fab fa-twitter"></i>
+                    <h2>Twitter (X)</h2>
+                </a>
+                <a href="specs.html" class="tile">
+                    <i class="fas fa-desktop"></i>
+                    <h2>PC Specs</h2>
+                </a>
+                <a href="idiot.html" class="tile mystery">
+                    <i class="fas fa-question-circle"></i>
+                    <h2>???</h2>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const loaderOverlay = document.getElementById('loader-overlay');
+        const mainContentWrapper = document.getElementById('main-content-wrapper');
+
+        function onTurnstileSuccess(token) {
+            console.log("Turnstile verification successful!", token);
+            if (loaderOverlay) {
+                loaderOverlay.classList.add('hidden');
+            }
+            if (mainContentWrapper) {
+                mainContentWrapper.style.display = 'flex';
+                document.body.style.overflow = 'auto'; 
+            }
+        }
+        
+        function onTurnstileError(errorCode) {
+            console.error("An error occurred during verification. Code:", errorCode);
+            const msg = document.getElementById('verification-message');
+            if (msg) {
+                msg.innerHTML = '<p style="color: #ff6b6b;">Verification error. Please refresh the page.</p>';
+            }
+        }
+        
+        function onTurnstileExpired() {
+            console.warn("Turnstile token has expired.");
+             const msg = document.getElementById('verification-message');
+            if (msg) {
+                 msg.textContent = 'Verification expired. Please re-verify.';
+            }
+        }
+
+        function onloadTurnstileCallback() {
+            const widgetContainer = document.getElementById('turnstile-verification-widget');
+            if (typeof turnstile !== 'undefined' && widgetContainer) {
+                turnstile.render(widgetContainer, {
+                    sitekey: '0x4AAAAAABeaX6IJ3KUXhOq1',
+                    callback: onTurnstileSuccess,
+                    'error-callback': onTurnstileError,
+                    'expired-callback': onTurnstileExpired,
+                    theme: 'dark',
+                });
+            } else {
+                console.error('Turnstile API not loaded or container not found.');
+                const msg = document.getElementById('verification-message');
+                 if (msg) {
+                     msg.innerHTML = '<p style="color: #ffa500;">Could not load verification module. Please refresh the page.</p>';
+                 }
+            }
+        }
+    </script>
+</body>
+</html>
